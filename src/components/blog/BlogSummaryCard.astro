@@ -26,7 +26,7 @@ const { post } = Astro.props;
     <div class='flex justify-between items-center'>
       <ul class='flex gap-4 mt-2'>
         {
-          post.data.tags.map((tag) => {
+          post.data.tags.slice(0,3).map((tag) => {
             return (
               <li>
                 <a class="sanchez" href={`/blog/tags/${tag.toLowerCase()}/`}>

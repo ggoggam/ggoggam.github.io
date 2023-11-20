@@ -5,8 +5,9 @@ interface Props {
 
 const { content } = Astro.props;
 ---
-
-<article class='prose-slate w-sm md:w-prose md:prose poppins'>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css"
+    integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ" crossorigin="anonymous">
+<article class='prose-slate w-sm md:w-prose md:prose pretendard'>
   <a href='/blog/' title='Back to blog'>&larr; Back to blog</a>
   <p class='text-slate text-sm md:text-base'>
     Published on {content.pubDate} by {content.author}
