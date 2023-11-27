@@ -5,8 +5,8 @@ author: "Ggoggam"
 tags:
   - HTMX
   - Fullstack
-imgUrl: '../../assets/hypermedia.png'
-description: How do we represent and learn sets with deep learning?
+imgUrl: '../../assets/hypermedia.jpg'
+description: "What is a hypermedia systems?"
 layout: '../../layouts/BlogPost.astro'
 ---
 ## Introduction 
