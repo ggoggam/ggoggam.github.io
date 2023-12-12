@@ -1,5 +1,5 @@
 ---
-title: You are using JWT wrong
+title: You are (most likely) using JWT wrong
 pubDate: 12/01/2023 14:25
 author: "Ggoggam"
 tags:
