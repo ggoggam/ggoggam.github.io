@@ -6,7 +6,7 @@ tags:
   - HTMX
   - Fullstack
 imgUrl: '../../assets/hypermedia.jpg'
-description: "What is a hypermedia systems?"
+description: "What is hypermedia?"
 layout: '../../layouts/BlogPost.astro'
 ---
 ## Introduction 
