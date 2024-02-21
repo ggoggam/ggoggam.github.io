@@ -3,7 +3,7 @@
 </script>
 
 <footer>
-	<div class="container flex flex-col items-center justify-between sm:h-24">
+	<div class="container flex flex-col items-center justify-between sm:h-24 py-8">
         <p class="text-sm leading-loose text-muted-foreground md:text-left">
             Built with
             <a

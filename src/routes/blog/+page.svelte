@@ -16,13 +16,13 @@
     })
 </script>
 
-<div class="w-xl self-center">
+<div class="max-w-xl self-center">
     <Input type="text" placeholder="Search" class="sticky my-4" bind:value={query}/>
 
     {#if posts.length > 0}
-        <div class="flex flex-col gap-y-4 overflow-y-auto">
+        <div class="flex grow flex-col gap-y-4">
             {#each posts as post}
-            <a href="/blog/{post.slug}">
+            <a href="/blog/{post.slug}" class="grow min-w-full">
                 <Card.Root>
                     <Card.Header>
                         <Card.Title>{post.title}</Card.Title>
