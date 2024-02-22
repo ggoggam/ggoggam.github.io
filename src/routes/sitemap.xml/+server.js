@@ -27,19 +27,28 @@ export async function GET({ setHeaders }) {
         <loc>${siteConfig.url}</loc>
         <priority>1.0</priority>
       </url>
+      <url>
+        <loc>${siteConfig.url}/blog</loc>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+      </url>
+      <url>
+        <loc>${siteConfig.url}/about</loc>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+      </url>
+      <url>
+        <loc>${siteConfig.url}/gallery</loc>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+      </url>
 
       ${posts
 				.map(
 					(post) => `<url>
             <loc>${siteConfig.url}/blog/${post.slug}</loc>
-            <lastmod
-              >${
-								post.updated
-									? new Date(post.updated).toISOString()
-									: new Date(post.date).toISOString()
-							}</lastmod
-            >
-            <changefreq>monthly</changefreq>
+            <lastmod>${new Date(post.date).toISOString()}</lastmod>
+            <changefreq>weekly</changefreq>
             <priority>1.0</priority>
           </url>`
 				)
