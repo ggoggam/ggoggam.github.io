@@ -1,6 +1,4 @@
 <script lang="js">
-    import { Separator } from "$lib/components/ui/separator"
-
     /** @type {import('./$types').PageData} */
     export let data;
 </script>
@@ -12,8 +10,8 @@
 </svelte:head>
   
 <!-- render the post -->
-<div class="container flex-1 md:grid md:gap-6 justify-center mx-auto">
-    <article class="min-w-fit">
+<div class="md:max-w-2xl flex-1 flex-col md:self-center">
+    <article>
         <div class="flex flex-col gap-y-4">
             <header class="flex flex-col gap-y-2">
                 <h1 class="mt-6 text-4xl font-bold tracking-tight">
@@ -25,7 +23,7 @@
                 <span>{data.meta.readingTime.text}</span>
                 </h4>
             </header>
-            <Separator></Separator>
+            <hr/>
             <article class="prose dark:prose-invert">
                 <svelte:component this={data.content} />
             </article>
