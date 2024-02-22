@@ -125,8 +125,9 @@ fun main() {
 }
 ```
 
-With this combined with the Ktor[^6] (my recent favorite web framework) routing, we can translate the server code into a more declarative and composable form. In my opinion, this is more manageable than having HTML templates in a static directory or formatted string.
-
+Such characteristics of Kotlin enables the development of DSL in a functional form, making the APIs composable.
+This combined with the Ktor[^6] (my recent favorite web framework) routing, we can translate the server code into a more declarative and composable form. 
+In my opinion, this is more manageable than having HTML templates in a static directory or formatted string.
 ```kotlin
 fun FlowContent.index() = body {
     input {
@@ -165,7 +166,10 @@ fun FlowContent.tableRow(book: Book) = tr {
     td { +book.author }
     td { +book.isbn }
 }
+```
 
+In the main module, we can simply write the following:
+```kotlin
 fun Application.module() {
     routing {
         get("/") {
