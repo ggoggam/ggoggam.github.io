@@ -34,7 +34,7 @@
     right: 0.05em;
     top: -0.05em;
     z-index: -1;
-    color: background;
+    color: hsl(var(--background));
 }
 
 .logo-text:hover{
