@@ -1,3 +1,11 @@
+<script>
+    import { siteConfig } from "$lib/config"
+</script>
+
+<svelte:head>
+    <title>{siteConfig.name} - about</title>
+</svelte:head>
+
 <div class="max-w-2xl self-center">
     <div class="flex flex-col gap-y-6">
         <h1 class="text-2xl font-semibold flex flex-grow">

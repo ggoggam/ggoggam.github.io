@@ -1,11 +1,12 @@
 <script lang="js">
+    import { siteConfig } from '$lib/config';
     /** @type {import('./$types').PageData} */
     export let data;
 </script>
 
 <svelte:head>
-    <title>{data.meta.title} - {data.meta.author}</title>
-    <meta name="description" content={data.meta.preview.text} />
+    <title>{siteConfig.name} - {data.meta.title}</title>
+    <meta name="description" content={data.meta.description} />
     <meta name="author" content={data.meta.author} />
 </svelte:head>
   

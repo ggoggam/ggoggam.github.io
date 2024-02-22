@@ -1,4 +1,6 @@
 <script>
+	import { siteConfig } from "$lib/config";
+
     let donut = "";
     
     var A = 1;
@@ -51,6 +53,10 @@
     setInterval(asciiframe, 50);
     
 </script>
+
+<svelte:head>
+    <title>{siteConfig.name}</title>
+</svelte:head>
 
 <div class="container flex flex-col items-center gap-y-12">
     <!-- <p class="text-xl font-semibold">Today I Learned </p> -->

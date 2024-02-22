@@ -2,6 +2,7 @@
     import * as Card from "$lib/components/ui/card";
     import { Badge } from "$lib/components/ui/badge";
     import { Input } from "$lib/components/ui/input";
+    import { siteConfig } from "$lib/config";
 
     /** @type {import('./$types').PageData} */
 	export let data;
@@ -15,6 +16,10 @@
         return true;
     })
 </script>
+
+<svelte:head>
+    <title>{siteConfig.name} - blog</title>
+</svelte:head>
 
 <div class="max-w-xl self-center">
     <Input type="text" placeholder="Search" class="sticky my-4" bind:value={query}/>
