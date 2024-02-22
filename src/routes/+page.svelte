@@ -41,7 +41,7 @@
                     cp * ct * sB));
             if (y < 22 && y >= 0 && x >= 0 && x < 79 && D > z[o]) {
                 z[o] = D;
-                b[o] = ".,-~:;=!*#$@"[N > 0 ? N : 0];
+                b[o] = ".,yneidIoLTa"[N > 0 ? N : 0];
             }
             }
         }
@@ -52,6 +52,6 @@
 </script>
 
 <div class="container flex flex-col items-center gap-y-12">
-    <p class="text-xl font-semibold">Today I Learned </p>
+    <!-- <p class="text-xl font-semibold">Today I Learned </p> -->
     <pre>{donut}</pre>
 </div>

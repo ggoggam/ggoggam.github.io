@@ -46,14 +46,14 @@ It's quite straightforward! Plus, there are JWT libraries available that handle 
 ## Caveats
 In practice, if an attacker gains access to a valid JWT, they essentially have the authority of the victim. To mitigate this risk, many implementations aim to reduce the likelihood of JWT theft, even when the token is transmitted over a supposedly secure protocol like HTTPS.
 
-### Refresh Token
+### Refresh token
 One common method is to give the JWT used for client-server communication (often called the access token) a short expiry. To refresh the expired JWT, a refresh token is used, securely stored on both client and server.
 
 When the access token expires, a refresh request is sent to the server with the refresh token. The server validates the token by comparing it with one stored in the server database.
 
 If a valid, matching refresh token is found in the database, the server replaces the token with a new one and returns it. Otherwise, the user will be prompted to log in again. Following standard security measures such as encrypted storage should make everything straightforward, right?
 
-### Race Conditions
+### Race conditions
 
 However, there's another crucial caveat to consider. The client needs to store the refresh token on the device, and it will be accessed in the future when the access token expires. In many modern HTTP client frameworks such as Retrofit for Android, requests may be made concurrently to reduce perceived loading time.
 

@@ -16,7 +16,7 @@ export default {
 		headings,
 		relativeImages,
 		remarkFootnotes,
-		readingTime
+		readingTime,
 	],
 	rehypePlugins: [
 		slugPlugin,
