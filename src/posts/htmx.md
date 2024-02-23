@@ -31,7 +31,7 @@ This brings several advantanges over conventional HTML or modern frontend framew
 ## Real-time Search with HTMX
 Let us consider a simple example of a real-time search, where search results are shown after some moment the user stopped typing into the search bar.
 Without explicit client-side scripts, we can achieve this with simple HTML attributes using HTMX.
-To begin, the server responds with the following HTML for the home endpoint:
+To begin, the server responds with the following HTML for the home endpoint.
 
 ```html
 <input type="search" 
@@ -53,7 +53,9 @@ To begin, the server responds with the following HTML for the home endpoint:
 </table>
 ```
 
-Here, a `POST` request to `/search` endpoint is invoked by `hx-post`, which is triggered either 1. 500ms after input has been changed or 2. the input is submitted and whose response replaces `tbody` with id `search-results`. The server (written with FastAPI for the example) should therefore implement two endpoints, namely `GET /` and `POST /search`.
+Here, a `POST` request to `/search` endpoint is invoked by `hx-post`, which is triggered either 1. 500ms after input has been changed or 2. the input is submitted and whose response replaces `tbody` with id `search-results`. 
+You can choose any language with your favorite server framework of your choosing, but I choose FastAPI for this example.
+The server should therefore implement two endpoints, namely `GET /` and `POST /search`. 
 
 ```python
 app = FastAPI()
@@ -97,7 +99,8 @@ async def search(request: Request, db = Depends(get_database)):
                      f"<td>{book.isbn}</td></tr>")
     return response
 ```
-Pretty simple without having to write much code!
+Pretty simple without having to write much code! 
+For a bigger project, you can create your own static template and render it with jinja.
 
 ## Kotlin HTML DSL and HTMX
 
@@ -190,6 +193,7 @@ fun Application.module() {
     }
 }
 ```
+I will be posting on the Ktor + HTMX with Tailwind CSS (possibly with headless component libraries) setup in another post in the future.
 
 [^1]: https://htmx.org
 [^2]: https://en.wikipedia.org/wiki/HATEOAS
