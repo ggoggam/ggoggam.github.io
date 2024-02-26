@@ -24,7 +24,7 @@ export async function GET({ setHeaders }) {
 				<item>
 				  <guid>${siteConfig.url}/blog/${post.slug}</guid>
 				  <title>${post.title}</title>
-				  <description>${post.preview.text}</description>
+				  <description>${post.preview}</description>
 				  <link>${siteConfig.url}/post/${post.slug}</link>
 				  <pubDate>${new Date(post.date).toUTCString()}</pubDate>
 			  </item>
