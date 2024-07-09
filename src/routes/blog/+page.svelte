@@ -21,13 +21,13 @@
     <title>{siteConfig.name} - blog</title>
 </svelte:head>
 
-<div class="max-w-xl self-center">
-    <Input type="text" placeholder="Search" class="sticky my-4" bind:value={query}/>
+<div class="max-w-xl min-w-xl self-center">
+    <!-- <Input type="text" placeholder="Search" class="sticky my-4" bind:value={query}/> -->
 
     {#if posts.length > 0}
-        <div class="flex grow flex-col gap-y-4">
+        <div class="flex flex-col gap-y-4">
             {#each posts as post}
-            <a href="/blog/{post.slug}" class="grow min-w-full">
+            <a href="/blog/{post.slug}" class="grow">
                 <Card.Root>
                     <Card.Header>
                         <Card.Title>{post.title}</Card.Title>
