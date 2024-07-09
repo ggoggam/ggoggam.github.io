@@ -1,13 +1,57 @@
 ---
 title: Client-side Scraping with Webview
-description: A novel method for delegating scraping to client
+description: Delegate your scraping need to the client
 author: ggoggam
 date: 02/01/2024
-published: false
+published: true
 categories:
   - Scraping
+  - Client
   - Webview
 ---
 
-Many of the side projects touch on web scraping, where data is scraped from the web using HTTP requests or a controllable browser.
+Web scraping is perhaps the most common choice for a side project.
+While there are plethora of resources on web scraping on server-side, i.e. using a centralized server to crawl the web or a controlled web driver, there is almost no resource on client-side scraping or web automation at the client-side.
+In this post, we would like to focus our discussion on the client-side scraping and automation in applications.
 
+Client-side scraping and automation is using client resources to scrape potentially third-party web or to automate client workflow.
+This provides several advantages over naive scraping, which often involves calling previously researched APIs or controlling a browser remotely with regression testing suite such as Selenium[^1]:
+
+1. It saves server resources by delegating compute required for centralized scraping and automation. From available information, RabbitOS relies on a similar idea and has a centralized server that hosts instances of client devices, which can be expensive as emulators / web drivers can take up a significant amount of reousrces.
+
+2. It makes for a better user experience as clients do not require communication with the centralized scraping server.
+
+3. It can (partially) avoid legal complications of scraping third-party web as it is the individual client devices doing the scraping. As for the automation, we are only improving user experience by automating what the clients are doing.
+
+4. It provides a flexibility on designing user experiences and interface.
+
+## Using Webview to our advantage
+
+![webview](./webview.png)
+
+Many UI frameworks provide webview, an embedded web browser within an app. 
+Since it is usually used for embedding web-based applications, it provides APIs that can bridge between itself and the native application for controlling the flow.
+We can use these APIs to our advantage as it provides a way to transfer data between the native application and webview.
+
+## Some use cases
+
+Why do we need this? You may ask. There are potentially great use cases for this.
+In fact, this is already being used in many personalized finance apps that need to collect data from multiple banking websites, but has no public APIs to do so due to legal reasons. 
+In order to implement this feature, you would need to 
+1. Collect credentials from the native app input by the user
+2. Input the credentials in the respective website
+3. Parse the data from the webview then pass it back to the native app for various use cases, e.g. show it via common user interface or send it to the domain server for recommendation services
+
+This enables simplified user interfaces and plenty of opportunities for additional features for a better user experience.
+Another use case would be a centralized search for a specific domain, for instance e-commerce.
+Given a query, we can leverage the personalized recommendation and search features already implemented in the respective platforms to show all the products within a single view for an easier comparison.
+
+A more relevant use case nowadays would be coupled with large language models to summarize the outputs or translating natural language query to scraping requests (or function calls). 
+If the language models gain capabilities to plan for itself, it would enable an autonomous agent to look for relevant information given a simple query, greatly reducing time and effort of users investing in these activities. However, this seems far considering the current capabilities of LLMs.
+
+## Implementation
+
+
+
+
+[^1]: https://www.selenium.dev
