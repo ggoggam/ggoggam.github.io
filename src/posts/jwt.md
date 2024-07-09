@@ -65,7 +65,7 @@ The issue arises when a finishes refreshing the token first and saves it to the 
 
 ### Solution
 
-Hence, it is crucial to implement some form of mutex logic, or equivalently some atomic indicator to lock other concurrent processes when there is already an ongoing refresh request.
+Hence, it is crucial to implement some form of mutex logic, or equivalently some semaphore to lock other concurrent processes when there is already an ongoing refresh request.
 Fortunately, modern HTTP client frameworks supports interfaces that can intercept in- and outbound requests. In the style of OkHttp3, implementation with mutex using coroutines can be done in the following way:
 ```kotlin
 class AuthenticationInterceptor(private val tokenStorage: TokenStorage) : Interceptor {
