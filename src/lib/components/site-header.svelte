@@ -11,10 +11,10 @@
         href: "/blog",
         name: "blog"
       },
-      {
-        href: "/gallery",
-        name: "gallery"
-      },
+      // {
+      //   href: "/gallery",
+      //   name: "gallery"
+      // },
       {
         href: "/about",
         name: "about"
