@@ -72,7 +72,7 @@ class async_lru_cache:
 
     def __call__(self, func):
         async def wrapper(*args, **kwargs):
-            key = Key(*args, **kwargs)
+            key = HashableKey(*args, **kwargs)
             if key in self.lru:
                 return self.lru[key]
             self.lru[key] = await func(*args, **kwargs)

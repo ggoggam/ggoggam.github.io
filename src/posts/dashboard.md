@@ -3,7 +3,7 @@ title: Making a simple dashboard with HTMX
 description: HTMX + FastAPI
 author: ggoggam
 date: 06/05/2024
-published: true
+published: false
 categories:
   - HTMX
   - FastAPI
@@ -13,6 +13,12 @@ As I was almost done with my academic work, I embarked on a quick side-project t
 There used be one made by a former lab member, 
 but it was no longer being maintained and becoming outdated.
 My main focus on the implementation was to make it 1. simple 2. maintainable  3. modestly secure and 4. look nice. The final product looks like this:
+
+### Home (Login)
+![dashboard home](./assets/home.png)
+
+### Dashboard
+![dashboard](./assets/dashboard.png)
 
 ## Setup
 Since most of the lab members are only familiar with python, I decided to implement the web server with `fastapi`, a popular choice of ASGI framework. For a nice UI component, there are not that many choice for pure HTML/CSS. 

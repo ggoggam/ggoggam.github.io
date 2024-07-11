@@ -1,5 +1,5 @@
 ---
-title: Client-side Scraping with Webview
+title: Client-side Scraping with Webview - Part 1
 description: Delegate your scraping need to the client
 author: ggoggam
 date: 02/01/2024
@@ -17,7 +17,7 @@ In this post, we would like to focus our discussion on the client-side scraping 
 Client-side scraping and automation is using client resources to scrape potentially third-party web or to automate client workflow.
 This provides several advantages over naive scraping, which often involves calling previously researched APIs or controlling a browser remotely with regression testing suite such as Selenium[^1]:
 
-1. It saves server resources by delegating compute required for centralized scraping and automation. From available information, RabbitOS relies on a similar idea and has a centralized server that hosts instances of client devices, which can be expensive as emulators / web drivers can take up a significant amount of reousrces.
+1. It saves server resources by delegating compute required for centralized scraping and automation. From available information, RabbitOS relies on a similar idea and has a centralized server that hosts instances of client devices, which can be expensive as emulators / web drivers can take up a significant amount of resources.
 
 2. It makes for a better user experience as clients do not require communication with the centralized scraping server.
 
@@ -27,7 +27,7 @@ This provides several advantages over naive scraping, which often involves calli
 
 ## Using Webview to our advantage
 
-![webview](./webview.png)
+![webview](./assets/webview.png)
 
 Many UI frameworks provide webview, an embedded web browser within an app. 
 Since it is usually used for embedding web-based applications, it provides APIs that can bridge between itself and the native application for controlling the flow.
@@ -47,9 +47,9 @@ Another use case would be a centralized search for a specific domain, for instan
 Given a query, we can leverage the personalized recommendation and search features already implemented in the respective platforms to show all the products within a single view for an easier comparison.
 
 A more relevant use case nowadays would be coupled with large language models to summarize the outputs or translating natural language query to scraping requests (or function calls). 
-If the language models gain capabilities to plan for itself, it would enable an autonomous agent to look for relevant information given a simple query, greatly reducing time and effort of users investing in these activities. However, this seems far considering the current capabilities of LLMs.
+If the language models gain capabilities to plan for itself (even though I highly doubt this would happen in a reasonable time frame and with the current direction in AI research), it would enable an autonomous agent to look for relevant information given a simple query, greatly reducing time and effort of users investing in these activities. However, this seems far considering the current capabilities of LLMs.
 
-## Implementation
+More details will be explained in the coming posts.
 
 
 

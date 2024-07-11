@@ -1,7 +1,6 @@
 <script lang="js">
     import * as Card from "$lib/components/ui/card";
     import { Badge } from "$lib/components/ui/badge";
-    import { Input } from "$lib/components/ui/input";
     import { siteConfig } from "$lib/config";
 
     /** @type {import('./$types').PageData} */
@@ -11,7 +10,7 @@
 
     $: posts = data.posts.filter((post) => {
         if (query) {
-            return post.title.includes(query) || post.preview.includes(query); 
+            return post.title.includes(query) || post.content.includes(query); 
         }
         return true;
     })
@@ -24,32 +23,26 @@
 <div class="max-w-xl min-w-xl self-center">
     <!-- <Input type="text" placeholder="Search" class="sticky my-4" bind:value={query}/> -->
 
-    {#if posts.length > 0}
-        <div class="flex flex-col gap-y-4">
-            {#each posts as post}
-            <a href="/blog/{post.slug}" class="grow">
-                <Card.Root>
-                    <Card.Header>
-                        <Card.Title>{post.title}</Card.Title>
-                        <Card.Description>{post.description}</Card.Description>
-                    </Card.Header>
-                    <Card.Footer>
-                        <div class="flex grow justify-between items-center">
-                            <p class="font-base text-sm">{post.readingTime.text}</p>
-                            <div class="flex gap-x-2">
-                                {#each post.categories as category}
-                                    <Badge>{category}</Badge>
-                                {/each}
-                            </div>
+    <div class="flex flex-col gap-y-4">
+        {#each posts as post}
+        <a href="/blog/{post.slug}" class="grow">
+            <Card.Root>
+                <Card.Header>
+                    <Card.Title class="line-clamp-1">{post.title}</Card.Title>
+                    <Card.Description>{post.description}</Card.Description>
+                </Card.Header>
+                <Card.Footer class="flex flex-row justify-between items-center">
+                    <p class="font-base text-sm whitespace-nowrap">{post.readingTime.text}</p>
+                    <div class="hidden lg:block mx-4">
+                        <div class="flex flex-wrap gap-2">
+                            {#each post.categories as category}
+                                <Badge>{category}</Badge>
+                            {/each}
                         </div>
-                    </Card.Footer>
-                </Card.Root>
-            </a>
-            {/each}
-        </div>
-    {:else}
-        <p class="flex grow">
-            No posts found {":("}
-        </p>
-    {/if}
+                    </div>
+                </Card.Footer>
+            </Card.Root>
+        </a>
+        {/each}
+    </div>
 </div>
