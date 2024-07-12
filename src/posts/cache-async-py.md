@@ -15,10 +15,10 @@ In python, it is usually done with `asyncio`, allowing developers to write concu
 However, there are times where we need to cache the output of the result of async functions.
 In synchronous python, it is usually done with cache implementations such as LRU (Least Recently Used) cache in `functools` package, but it is not applicable to async functions since they return coroutine, not function outputs. Hence we need to implement a cache, preferably in the form of decorator for a concise code.
 
+## Defining LRU cache
 In order to do this, we shall first define a key that will be used to identify arguments to a function. 
 Note that it should be **hashable** so that it can be stored as a key in a dictionary (hash map).
 We will focus on implementing LRU cache, which is basic yet one of most commonly used caching algorithm, notably in memory paging. 
-One can extend this idea to implement TTL (Time-to-Live) cache, which may be useful in web applications.
 
 ```python
 class HashableKey:
@@ -63,6 +63,39 @@ class LeastRecentlyUsedCache(OrderedDict):
             del self[oldest]
 ```
 
+
+
+## Defining TTL cache
+
+To define a time-to-live (TTL) cache, one can extend LRU to check for expiration of the cached results.
+```python
+class TimeToLiveCache(LeastRecentlyUsedCache):
+    def __init__(
+        self, ttl: Optional[int] = None, max_size: Optional[int] = None
+    ) -> None:
+        super().__init__(max_size=max_size)
+
+        self.ttl = datetime.timedelta(seconds=ttl) if ttl else None
+
+    def __contains__(self, key: Any) -> bool:
+        if key not in self.keys():
+            return False
+        expiration = super().__getitem__(key)[1]
+        if expiration and expiration < datetime.datetime.now():
+            del self[key]
+            return False
+        return True
+
+    def __getitem__(self, key: Any) -> Any:
+        value = super().__getitem__(key)[0]
+        return value
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        ttl = (datetime.datetime.now() + self.ttl) if self.ttl else None
+        super().__setitem__(key, (value, ttl))
+```
+
+## Defining a wrapper
 For a wrapper (decorator), we can define the following wrapper class using the aforementioned key and the cache implementations. 
 
 ```python
@@ -79,7 +112,7 @@ class async_lru_cache:
             return self.lru[key]
         return wrapper        
 ```
-
+The wrapper for TTL can be written in a similar way, replace `self.lru` with an instance of TTL cache defined above.
 Now, we can use this with an asynchronous function.
 
 ```python

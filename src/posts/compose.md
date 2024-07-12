@@ -5,7 +5,7 @@ author: ggoggam
 date: 02/01/2024
 published: true
 categories:
-  - Client
+  - KMM
   - Compose
   - Cross-platform
 ---

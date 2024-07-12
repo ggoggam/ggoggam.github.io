@@ -14,7 +14,7 @@
         <p class="leading-relaxed text-base text-wrap">
             I am a self-learner with interests ranging from user interface / experience, backend, to artificial intelligence. 
             Here, I am sharing my insights from my past-time tinkerings and readings. 
-            My current engineering interest is in <a href="https://svelte.dev" class="underline">Svelte</a>, <a href="https://htmx.org" class="underline">HTMX</a> (hypermedia systems) and <a href="https://kotlinlang.org/docs/multiplatform.html" class="underline">Kotlin Multiplatform</a> development with Compose.
+            I come from a non-CS background, so forgive me if I make mistakes in my posts.
         </p>
         <p class="leading-relaxed text-base text-wrap">
             I occassionally research on topics in artificial intelligence (that is not necessarily related to large language models).
