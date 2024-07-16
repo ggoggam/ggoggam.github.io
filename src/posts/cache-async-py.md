@@ -2,7 +2,7 @@
 title: A quick note on async cache
 description: Implementing async cache decorator
 author: ggoggam
-date: 07/01/2024
+date: 06/15/2024
 published: true
 categories:
   - Cache
@@ -96,7 +96,7 @@ class TimeToLiveCache(LeastRecentlyUsedCache):
 ```
 
 ## Defining a wrapper
-For a wrapper (decorator), we can define the following wrapper class using the aforementioned key and the cache implementations. 
+For a wrapper (decorator), we can define the following wrapper class using the aforementioned key and cache implementations. 
 
 ```python
 class async_lru_cache:
@@ -112,7 +112,7 @@ class async_lru_cache:
             return self.lru[key]
         return wrapper        
 ```
-The wrapper for TTL can be written in a similar way, replace `self.lru` with an instance of TTL cache defined above.
+The wrapper for TTL can be written in a similar way; just replace `self.lru` with an instance of TTL cache defined above.
 Now, we can use this with an asynchronous function.
 
 ```python

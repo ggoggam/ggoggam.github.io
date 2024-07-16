@@ -2,7 +2,7 @@
 title: Making a simple dashboard with HTMX
 description: HTMX + FastAPI
 author: ggoggam
-date: 06/05/2024
+date: 06/20/2024
 published: true
 categories:
   - HTMX
@@ -25,7 +25,7 @@ My main focus on the implementation was to make it 1. simple 2. maintainable  3.
 
 ## Setup
 My choice of frameworks was heavily dependent on maintainability of the project.
-Since most of the lab members are already familiar with python and hsa no prior knowledge on popular frontend framework such as React, 
+Since most of the lab members are already familiar with python and has no prior knowledge on popular frontend framework such as React, 
 I decided to implement the web server with `fastapi`, a popular choice of ASGI framework in python.
 All of the UIs are written in vanilla HTML/CSS with `jinja` templates and DasiyUI[^1] for a nice-looking component library.
 
