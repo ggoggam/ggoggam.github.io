@@ -121,6 +121,6 @@ class UserService:
         ...
 
     @async_lru_cache()
-    def get_user(self, id: int) -> User:
+    async def get_user(self, id: int) -> User:
         ...
 ```
