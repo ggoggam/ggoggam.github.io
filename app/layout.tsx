@@ -1,100 +1,92 @@
+"use client"
+
 import type { Metadata } from "next";
-import Link from "next/link";
 import localFont from "next/font/local";
+import Link from "next/link";
+import { AppProvider, useAppContext } from './context';
+import { ArrowUpRight } from "lucide-react";
+
 import "./globals.css";
-import { Separator } from "@/components/ui/separator";
+
 
 const geistSans = localFont({
-  src: "./fonts/Geist.woff",
+  src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
 });
 
 const geistMono = localFont({
-  src: "./fonts/GeistMono.woff",
+  src: "fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
   weight: "100 900",
 });
 
-const pretendard = localFont({
-  src: [
-    {
-      path: "./fonts/PretendardStd-Black.woff2",
-      weight: '900',
-      style: 'normal'
-    },
-    {
-      path: "./fonts/PretendardStd-ExtraBold.woff2",
-      weight: '800',
-      style: 'normal'
-    },
-    {
-      path: "./fonts/PretendardStd-Bold.woff2",
-      weight: '700',
-      style: 'normal'
-    },
-    {
-      path: "./fonts/PretendardStd-SemiBold.woff2",
-      weight: '600',
-      style: 'normal'
-    },
-    {
-      path: "./fonts/PretendardStd-Medium.woff2",
-      weight: '500',
-      style: 'normal'
-    },
-    {
-      path: "./fonts/PretendardStd-Regular.woff2",
-      weight: '400',
-      style: 'normal'
-    },
-    {
-      path: "./fonts/PretendardStd-Light.woff2",
-      weight: '300',
-      style: 'normal'
-    },
-    {
-      path: "./fonts/PretendardStd-ExtraLight.woff2",
-      weight: '200',
-      style: 'normal'
-    },
-    {
-      path: "./fonts/PretendardStd-Thin.woff2",
-      weight: '100',
-      style: 'normal'
-    }
-  ],
-  variable: '--font-pretendard'
-})
-
-export const metadata: Metadata = {
-  title: "TIL",
-  description: "Today I Learned",
-};
+// export const metadata: Metadata = {
+//   title: "TIL",
+//   description: "Today I Learned",
+// };
 
 export default function RootLayout({
   children,
 }: Readonly<{children: React.ReactNode;}>) {
   return (
-    <html lang="en" className="h-full">
-      <body className={`antialiased flex flex-col min-h-full`}>
-        <header className="">
-          <nav className="container mx-auto px-32 py-16 flex justify-between items-center flex-wrap">
-            <Link href="/" className="text-6xl font-black">TIL</Link>
-            <ul className="flex space-x-8">
-              <li><Link href="/til" className="font-bold">til</Link></li>
-              <li><Link href="/blog" className="font-bold">blog</Link></li>
-              <li><Link href="/about" className="font-bold">about</Link></li>
+    <AppProvider>
+      <RootLayoutContent>{children}</RootLayoutContent>
+    </AppProvider>
+  );
+}
+
+function RootLayoutContent({ children }: Readonly<{children: React.ReactNode;}>) {
+  const { chosen, setChosen } = useAppContext();
+
+  return (
+    <html lang="en">
+      <body className={`flex flex-col min-h-screen w-screen max-w-screen-4xl items-center bg-gray-50`}>
+        <header className="container py-4 md:py-12">
+          <nav className="flex justify-between items-center flex-wrap">
+            <Link href="/" className="font-black text-6xl leading-tight tracking-tighter">today i</Link>
+            <ul className="flex space-x-8 md:space-x-12 text-md font-semibold">
+              <li><Link href="/learned" onMouseEnter={() => setChosen("Learned")} onTouchStart={() => setChosen("Learned")}>learned</Link></li>
+              <li><Link href="/wrote" onMouseEnter={() => setChosen("Wrote")} onTouchStart={() => setChosen("Wrote")}>wrote</Link></li>
             </ul>
           </nav>
         </header>
-        <main className="flex-grow container mx-auto px-8 py-4">
+        <main className="container">
           {children}
         </main>
-        <footer className="mt-auto">
-          <div className="container mx-auto px-4 py-8 text-center text-xs">
-            Created by ggoggam. All rights reserved.
-          </div>
+        <footer className={`container mx-auto mt-4 space-y-8 text-neutral-600`}>
+            <ul className="text-sm hover:text-neutral-800 flex flex-row space-x-4">
+                <li>
+                    <Link className="flex items-center transition-all gap-x-1" rel="noreferrer noopener" href="/about">
+                        <ArrowUpRight/>
+                        about
+                    </Link>
+                </li>   
+
+                <li>
+                    <Link className="flex items-center transition-all gap-x-1" rel="noreferrer noopener" href="/rss">
+                        <ArrowUpRight/> 
+                        rss
+                    </Link>
+                </li>
+
+                <li>
+                    <Link className="flex items-center transition-all gap-x-1" rel="noreferrer noopener" href="https://github.com/ggoggam">
+                    <ArrowUpRight/> 
+                    github
+                    </Link>
+                </li>
+
+                <li>
+                    <Link className="flex items-center transition-all gap-x-1" rel="noreferrer noopener" href="https://github.com/ggoggam/ggoggam.github.io">
+                        <ArrowUpRight/>
+                        source
+                    </Link>
+                </li>            
+            </ul>
+            <p className="text-xs text-center">
+                © {new Date().getFullYear()} MIT Licensed. Created by gggogam.
+            </p>
         </footer>
       </body>
     </html>

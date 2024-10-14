@@ -9,23 +9,27 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@giscus/react": "^3.0.0",
     "@radix-ui/react-separator": "^1.1.0",
     "@react-three/drei": "^9.114.2",
     "@react-three/fiber": "^8.17.9",
+    "@react-three/postprocessing": "^2.16.3",
     "@react-three/rapier": "^1.5.0",
     "@types/three": "^0.169.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "gray-matter": "^4.0.3",
     "lucide-react": "^0.446.0",
-    "next": "14.2.13",
+    "next": "^14.2.15",
     "react": "^18",
     "react-dom": "^18",
     "react-markdown": "^9.0.1",
     "react-three": "^0.9.7",
+    "remark": "^15.0.1",
+    "remark-html": "^16.0.1",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
-    "three": "^0.169.0",
-    "zustand": "^5.0.0-rc.2"
+    "three": "^0.169.0"
   },
   "devDependencies": {
     "@types/node": "^20",

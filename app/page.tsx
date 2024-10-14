@@ -2,15 +2,18 @@
 
 import * as THREE from 'three'
 import { useRef } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { MarchingCubes, MarchingCube, MeshTransmissionMaterial, Environment, Bounds, Text } from '@react-three/drei'
+import { Canvas, extend, useFrame } from '@react-three/fiber'
+import { MarchingCubes, MarchingCube, MeshTransmissionMaterial, Environment, Bounds, Text, Effects } from '@react-three/drei'
 import { Physics, RigidBody, BallCollider } from '@react-three/rapier'
+import { useAppContext } from './context'
+import { EffectComposer, Noise } from '@react-three/postprocessing'
 
 
 function MetaBall({ color, vec = new THREE.Vector3(), ...props }) {
   const api = useRef()
   useFrame((state, delta) => {
     delta = Math.min(delta, 0.1)
+
     api.current.applyImpulse(
       vec
         .copy(api.current.translation())
@@ -35,40 +38,51 @@ function Pointer({ vec = new THREE.Vector3() }) {
   })
   return (
     <RigidBody type="kinematicPosition" colliders={false} ref={ref}>
-      <MarchingCube strength={0.5} subtract={10} color="orange" />
+      <MarchingCube strength={0.5} subtract={10} color="indianred" />
       <BallCollider args={[0.1]} type="dynamic" />
     </RigidBody>
   )
 }
 
 export default function Home() {
-  return (
-    <div style={{ height: '80vh' }}>
-      <Canvas camera={{ position: [0, 0, 10], fov: 15 }}>
-        <color attach="background" args={['#ffffff']} />
-        <Text color={0x000000} fontSize={.1}>Testing</Text>
-        <ambientLight intensity={1} />
-        <Physics gravity={[0, 2, 0]}>
-          <MarchingCubes resolution={90} maxPolyCount={30000} enableUvs={false} enableColors>
-            <meshStandardMaterial vertexColors thickness={0.15} roughness={0} />
-            <MetaBall color="indianred" position={[1, 1, 0.5]} />
-            <MetaBall color="skyblue" position={[-1, -1, -0.5]} />
-            <MetaBall color="teal" position={[2, 2, 0.5]} />
-            <MetaBall color="orange" position={[-2, -2, -0.5]} />
-            <MetaBall color="hotpink" position={[3, 3, 0.5]} />
-            {/* <MetaBall color="aquamarine" position={[-3, -3, -0.5]} /> */}
-            {/* <Pointer /> */}
-          </MarchingCubes>
-        </Physics>
-        <Environment files="img/industrial_workshop_foundry_1k.hdr" />
-        {/* Zoom to fit a 1/1/1 box to match the marching cubes */}
-        <Bounds fit clip observe margin={1}>
-          <mesh visible={false}>
-            <boxGeometry />
-          </mesh>
-        </Bounds>
-      </Canvas>
-    </div>
-    
-  );
+  const { chosen } = useAppContext();
+  
+    return (
+      <div className="flex-grow" style={{ height: '70vh' }}>
+        <Canvas camera={{ position: [0, 0, 10], fov: 15 }}>
+          <color attach="background" args={['#ffffff']} />
+          <Text color={0x000000} fontSize={.1} font={"fonts/GeistMono.woff"} fontWeight={900}>
+            Today,{"\n"}I{"\n"}{chosen}
+          </Text>
+          <ambientLight intensity={1} />
+          <Physics gravity={[0, 2, 0]}>
+            <MarchingCubes resolution={90} maxPolyCount={20000} enableUvs={false} enableColors>
+              <MeshTransmissionMaterial 
+                vertexColors 
+                chromaticAberration={0.5}
+                distortion={0.5}
+                distortionScale={0.5}
+              ></MeshTransmissionMaterial>
+              {/* <MetaBall color="indianred" position={[1, 1, 0.5]} /> */}
+              <MetaBall color="skyblue" position={[-1, -1, -0.5]} />
+              <MetaBall color="teal" position={[2, 2, 0.5]} />
+              <MetaBall color="orange" position={[-2, -2, -0.5]} />
+              <MetaBall color="hotpink" position={[3, 3, 0.5]} />
+              <MetaBall color="aquamarine" position={[3, 3, 0.5]} />
+              <Pointer></Pointer>
+            </MarchingCubes>
+          </Physics>
+          <Environment files="img/industrial.hdr" />
+          {/* Zoom to fit a 1/1/1 box to match the marching cubes */}
+          <Bounds fit clip observe margin={1}>
+            <mesh visible={false}>
+              <boxGeometry />
+            </mesh>
+          </Bounds>
+          <EffectComposer>
+            <Noise opacity={0.4} />
+          </EffectComposer>
+        </Canvas>
+      </div>
+    );
 }
