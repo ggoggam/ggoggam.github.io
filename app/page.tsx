@@ -11,7 +11,7 @@ export default function Home() {
         <MetaballScene />
       </div>
       <div className='flex flex-col gap-y-2'>
-        <h2 className="font-black text-2xl md:text-3xl">Featured</h2>
+        <h2 className="font-black text-2xl md:text-3xl">Some Readings</h2>
         {
           allNotes.map((note) => <PostPreview post={note}/>)
         }

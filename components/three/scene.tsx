@@ -30,9 +30,9 @@ function createCoordinate(low: number, high: number) {
 
 export function MetaballScene() {
     return (
-        <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
+        <Canvas camera={{ position: [0, 0, 5], fov: 15 }}>
             <color attach="background" args={['#ffffff']} />
-            <Text color={0x0f0f0f} fontSize={.15} fontWeight={900} font={"fonts/GeistMonoVF.woff"} >
+            <Text color={0x0f0f0f} fontSize={.1} fontWeight={900} font={"fonts/GeistMonoVF.woff"} >
             Hello
             </Text>
             <ambientLight intensity={.2} />

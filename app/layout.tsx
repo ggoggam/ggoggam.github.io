@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
 import "./globals.css";
+import SiteTitle from "@/components/title/site-title";
 
 
 const geistSans = localFont({
