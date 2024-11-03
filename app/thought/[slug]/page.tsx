@@ -1,10 +1,11 @@
-import { getAllNotes } from "@/lib/api";
+import { getAllPosts } from "@/lib/api";
 import Giscus from "@giscus/react";
 
 export async function generateStaticParams() {
-    const posts = getAllNotes();
-    return posts.map((note) => { slug: note.key })
+    const posts = getAllPosts();
+    return posts.map((post) => { slug: post.key })
 }
+
 
 export default function NotePage() {
     return (
@@ -24,6 +25,6 @@ export default function NotePage() {
                     loading="lazy"
                 />
             </div>
-        </div>
+        </div>   
     )
 }

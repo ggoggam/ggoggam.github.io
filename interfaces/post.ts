@@ -1,3 +1,5 @@
+import { Author } from "./author";
+
 export type Post = {
   key: string;
   title: string;
@@ -5,9 +7,7 @@ export type Post = {
   link: string;
   coverImage: string;
   excerpt: string;
-  ogImage: {
-    url: string;
-  };
   content: string;
   preview?: boolean;
+  author: Author;
 };

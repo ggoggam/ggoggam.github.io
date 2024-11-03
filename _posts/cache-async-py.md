@@ -1,8 +1,10 @@
 ---
 title: A quick note on async cache
-description: Implementing async cache decorator
-author: ggoggam
-date: 06/15/2024
+excerpt: Implementing async cache decorator
+author:
+    name: ggoggam
+    image: /assets/author/ggoggam.png
+date: 2024-06-15
 published: true
 categories:
   - Cache

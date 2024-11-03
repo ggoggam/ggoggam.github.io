@@ -1,11 +1,16 @@
 import * as THREE from 'three'
 import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { Props, useFrame } from '@react-three/fiber'
 import { MarchingCube } from '@react-three/drei'
 import {  RigidBody, BallCollider } from '@react-three/rapier'
 
+type MetaballProps = {
+  color: THREE.Color;
+  vec: THREE.Vector3;
+}
 
-export default function MetaBall({ color, vec = new THREE.Vector3(), ...props }) {
+
+export default function MetaBall({ color, vec = new THREE.Vector3(), ...props }: MetaballProps) {
     const api = useRef()
     useFrame((state, delta) => {
       delta = Math.min(delta, 0.1)

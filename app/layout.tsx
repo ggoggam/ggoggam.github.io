@@ -4,17 +4,15 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
 import "./globals.css";
-import SiteTitle from "@/components/title/site-title";
-
 
 const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
+  src: "../public/fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
 });
 
 const geistMono = localFont({
-  src: "fonts/GeistMonoVF.woff",
+  src: "../public/fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
   weight: "100 900",
 });
@@ -35,7 +33,7 @@ export default function RootLayout({
 function RootLayoutContent({ children }: Readonly<{children: React.ReactNode;}>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.className} flex flex-col min-h-screen md:screen-width-4xl justify-center items-center bg-gray-50`}>
+      <body className={`${geistSans.className} flex flex-col min-h-screen md:screen-width-2xl justify-center items-center bg-gray-50`}>
         <header className="container py-2 md:py-12 px-2 md:px-8">
           <nav className="flex justify-between items-center flex-wrap">
             <Link href="/" className="font-black text-4xl md:text-6xl leading-tight tracking-tighter">
@@ -46,7 +44,7 @@ function RootLayoutContent({ children }: Readonly<{children: React.ReactNode;}>)
                 <Link href="/learned">LEARNED</Link>
               </li>
               <li>
-                <Link href="/wrote">WROTE</Link>
+                <Link href="/thought">THOUGHT</Link>
               </li>
             </ul>
           </nav>
