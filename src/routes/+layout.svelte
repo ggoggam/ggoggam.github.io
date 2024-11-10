@@ -1,12 +1,12 @@
 <script>
-    import "../app.css";
     import { ArrowUpRight } from "lucide-svelte";
+    import "../app.css";
 
 	let { children } = $props();
 </script>
 
 <div class="flex flex-col min-h-screen md:screen-width-xl justify-center items-center">
-    <header class="container py-2 md:py-12 px-2 md:px8">
+    <header class="container py-2 md:py-12 px-2 md:px-8">
         <nav class="flex justify-between items-center flex-wrap">
             <a href="/" class="font-black text-4xl md:text-6xl leading-tight tracking-tighter">
                 TODAY I
@@ -51,7 +51,9 @@
                 </a>
             </li>
         </ul>
-
+        <p class="text-xs text-center">
+            © {new Date().getFullYear()} MIT Licensed. Created by gggogam.
+        </p>
     </footer>
 </div>
 

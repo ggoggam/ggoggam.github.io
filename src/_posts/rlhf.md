@@ -1,0 +1,20 @@
+---
+title: RLHF
+description: Making tamed monsters out of monsters
+author: ggoggam
+date: 02/28/2024
+published: false
+categories:
+  - AI
+  - RLHF
+  - LLM
+---
+
+It has been almost 2 years (!) since ChatGPT was released. 
+I had been following the evolution of natural language processing research before ChatGPT came out.
+In this post, I would like to give a brief overview of Reinforcement Learning with Human Feedback (RLHF), 
+the main approach taken to create ChatGPT and its rivaling cousins such as Claude and Gemini. 
+My recent research focuses on a novel method for RLHF in an offline setting, so it is rather timely to talk about this.
+
+![your friend](./assets//shoggoth.jpg)
+

@@ -9,6 +9,9 @@ import math from 'remark-math';
 import rehype_katex from 'rehype-katex';
 import katex from 'katex';
 import { visit } from 'unist-util-visit';
+import remarkFrontmatter from 'remark-frontmatter';
+import extract from 'remark-extract-frontmatter';
+
 
 const correctHastTree = () => (tree) => {
 	visit(tree, 'text', (node) => {
