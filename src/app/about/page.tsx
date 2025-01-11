@@ -8,7 +8,7 @@ export default async function AboutPage() {
   const imageFileNames = getImages()
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col space-y-4">
+    <div className="max-w-2xl mx-auto flex flex-col space-y-4 py-4 md:py-8">
       <h1 className="font-black text-4xl">ABOUT</h1>
       <p className="leading-relaxed">
         I am currently a research engineer at a medical artificial intelligence company (Lunit, if you are curious).
