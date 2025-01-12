@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: var(--font-geist-sans), Helvetica, sans-serif;
-}
-
 .overlap-metaball {
   color: black;
   mix-blend-mode: difference !important;
@@ -15,6 +11,7 @@ body {
 
 .prose section {
   padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 .prose pre > code {
@@ -24,7 +21,8 @@ body {
   overflow-x: auto;
   scrollbar-width: none;
   display: grid;
-  margin-bottom: 1rem;
+  margin-top: .5rem;
+  margin-bottom: .5rem;
 }
 
 .prose code {
@@ -39,10 +37,6 @@ body {
 
 .prose pre::-webkit-scrollbar {
   display: none;
-}
-
-.prose pre > code {
-  display: grid;
 }
 
 .prose pre span[data-line] {
