@@ -36,7 +36,7 @@ export default async function AboutPage() {
             </CarouselItem>
           ))}
         </CarouselContent>
-        <div className="hidden md:flex items-center justify-between w-full">
+        <div className="hidden lg:block">
           <CarouselPrevious />
           <CarouselNext />
         </div>
