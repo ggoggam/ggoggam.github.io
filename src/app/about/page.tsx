@@ -11,17 +11,18 @@ export default async function AboutPage() {
     <div className="max-w-2xl mx-auto flex flex-col space-y-4 py-4 md:py-8">
       <h1 className="font-black text-4xl">ABOUT</h1>
       <p className="leading-relaxed">
-        I am currently a research engineer at a medical artificial intelligence company (Lunit, if you are curious).
-        Though my current main focus is on MLOps, I have a wide range of interests spanning from user interface / experience, backend, and computer science in general.
-        My intention here is to share my insights and learnings from my past-time tinkerings and work. 
+        I am currently working as a research engineer at a medical artificial intelligence company (Lunit, if you are curious).
+        Prios to this, I was as a software engineer at an early stage startup, where I gained invaluable experience in building technology from ground up.
+        While my main focus is on MLOps, my interest are broad, spanning user interfaces and experiences, backend, and computer science in general.
       </p>
       <p className='leading-relaxed pb-12'>
-        I occassionally research on topics in artificial intelligence. 
-        My recent research topic was on applying Bayesian methodologies to deep learning models, language model in particular.
-        I am currently based in Seoul, South Korea with my black cat, ggoggam.
+        Through this blog, I intend to share my insights and learnings from my past-time tinkerings, readings, and work. 
+        Occassionally, I dabble on topics in artificial intelligence. 
+        My recent research has centered on applying Bayesian methodologies to deep learning models, with a particular focus on language models.
+        I am based in Seoul, South Korea, where I live with my black cat, <i>Ggoggam</i> (꼬깜), who ensures I never work in silence.
       </p>
       <div className="flex flex-col items-center justify-center">
-        <Carousel className="w-full max-w-md">
+        <Carousel className="w-full max-w-sm md:max-w-md">
         <CarouselContent>
           {imageFileNames.map((src, index) => (
             <CarouselItem key={index}>
@@ -35,8 +36,10 @@ export default async function AboutPage() {
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
+        <div className="hidden md:flex items-center justify-between w-full">
+          <CarouselPrevious />
+          <CarouselNext />
+        </div>
         </Carousel>
       </div>
     </div>
