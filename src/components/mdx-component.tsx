@@ -9,10 +9,10 @@ export function CustomMDXComponents(components: MDXComponents): MDXComponents {
     h1: (props) => <h1 className="text-3xl font-bold my-2 group hover:underline" {...props} />,
     h2: (props) => <h2 className="text-2xl font-bold my-2 group hover:underline" {...props} />,
     h3: (props) => <h3 className="text-xl font-bold my-2 group hover:underline" {...props} />,
-    p: ({ children }) => <p className="leading-relaxed mb-4s">{children}</p>,
-    ul: ({ children }) => <ul className="list-disc pl-6 mb-4">{children}</ul>,
-    ol: ({ children }) => <ol className="list-decimal pl-6 mb-4">{children}</ol>,
-    li: ({ children }) => <li className="mb-1">{children}</li>,
+    p: ({ children }) => <p className="leading-relaxed my-4">{children}</p>,
+    ul: ({ children }) => <ul className="list-disc pl-6 my-4">{children}</ul>,
+    ol: ({ children }) => <ol className="list-decimal pl-6 my-2">{children}</ol>,
+    li: ({ children }) => <li className="my-1">{children}</li>,
     a: ({ href, children }) => (
       <Link href={href as string} className="hover:underline">
         {children}
@@ -23,7 +23,7 @@ export function CustomMDXComponents(components: MDXComponents): MDXComponents {
         {...props}
         width={800}
         height={400}
-        className="rounded-lg my-4" 
+        className="rounded-lg my-4 shadow-sm" 
         alt={props.alt || 'Blog image'}
       />
     ),
@@ -49,6 +49,7 @@ export function CustomMDXComponents(components: MDXComponents): MDXComponents {
         {children}
       </td>
     ),
+    section: ({ children }) => <><hr></hr><h3 className='text-lg font-bold my-4'>Footnotes</h3>{children}</>,
     ...components,
   }
 }
