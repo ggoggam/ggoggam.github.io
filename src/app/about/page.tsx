@@ -12,7 +12,7 @@ export default async function AboutPage() {
       <h1 className="font-black text-4xl">ABOUT</h1>
       <p className="leading-relaxed">
         I am currently working as a research engineer at a medical artificial intelligence company (Lunit, if you are curious).
-        Prios to this, I was as a software engineer at an early stage startup, where I gained invaluable experience in building technology from ground up.
+        Prior to this, I was as a software engineer at an early stage startup, where I gained invaluable experience in building technology from ground up.
         While my main focus is on MLOps, my interest are broad, spanning user interfaces and experiences, backend, and computer science in general.
       </p>
       <p className='leading-relaxed pb-12'>
