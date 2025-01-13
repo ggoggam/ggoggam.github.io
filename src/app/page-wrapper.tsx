@@ -33,14 +33,14 @@ export default function ClientWrapper({
         <SiteHeader/>
         {isHome && 
           <div className="container mx-auto px-4 md:px-6 py-4">
-            <div className="w-full md:h-[25vh]" />
+            <div className="w-full md:h-[35vh]" />
             <h2 className="text-2xl font-black leading-tight text-gray-50">
               RECENT POSTS
             </h2>
           </div>
         }
       </header>
-      <main className={`container mx-auto px-4 md:px-6 pb-4 md:pb-8 flex-grow relative z-10`}>
+      <main className='container mx-auto px-4 md:px-6 pb-4 md:pb-8 flex-grow relative z-10 justify-center'>
         {children}
       </main>
       <Toaster/>

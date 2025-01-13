@@ -11,7 +11,7 @@ export type PostArticleProps = {
 }
 
 export default function PostArticle({ slug, title, date, content }: PostArticleProps) {
-    return <article className="max-w-2xl mx-auto py-4 md:py-8">
+    return <article className="max-w-3xl mx-auto py-4 md:py-8">
         <header className="mb-8">
         <h1 className="text-4xl font-black tracking-tight mb-2">{title.toUpperCase()}</h1>
         <time className="text-gray-500" dateTime={date}>{date}</time>
