@@ -18,6 +18,8 @@ export default function RootLayout({
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <head>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.19/dist/katex.min.css"/>
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8839205870560100"
+     crossorigin="anonymous"></script>
       </head>
       <body className="bg-gray-50 relative flex flex-col min-h-screen">
         <ClientWrapper>
