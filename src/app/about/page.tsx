@@ -12,14 +12,14 @@ export default async function AboutPage() {
       <h1 className="font-black text-4xl">ABOUT</h1>
       <p className="leading-relaxed">
         I am currently working as a research engineer at a medical artificial intelligence company (Lunit, if you are curious).
-        Prior to this, I was as a software engineer at an early stage startup, where I gained invaluable experience in building technology from ground up.
+        Prior to this, I was a software engineer at an early stage startup, where I gained invaluable experience in building technology from ground up.
         While my main focus is on MLOps, my interest are broad, spanning user interfaces and experiences, backend, and computer science in general.
       </p>
       <p className='leading-relaxed pb-12'>
         Through this blog, I intend to share my insights and learnings from my past-time tinkerings, readings, and work. 
         Occassionally, I dabble on topics in artificial intelligence. 
         My recent research has centered on applying Bayesian methodologies to deep learning models, with a particular focus on language models.
-        I am based in Seoul, South Korea, where I live with my black cat, <i>Ggoggam</i> (꼬깜), who ensures I never work in silence.
+        I am based in Seoul, South Korea, where I live with my black cat, <i>Ggoggam</i> (꼬깜).
       </p>
       <div className="flex flex-col items-center justify-center">
         <Carousel className="w-full max-w-sm md:max-w-md">
