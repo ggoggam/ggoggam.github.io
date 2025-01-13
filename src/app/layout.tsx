@@ -17,8 +17,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <head>
+      <meta name="google-adsense-account" content="ca-pub-8839205870560100"/>
+      <meta name="google-site-verification" content="vCArfISd2m3hx7UroyoWKQ_zRbKwWRid8Yfsg4G9xmI" />
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.19/dist/katex.min.css"/>
-      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8839205870560100" crossOrigin="anonymous"></script>
       </head>
       <body className="bg-gray-50 relative flex flex-col min-h-screen">
         <ClientWrapper>
