@@ -7,8 +7,8 @@ export type SiteFooterProps = {
 }
 
 export default function SiteFooter({ github, source }: SiteFooterProps) {
-  return <div className="container px-6 py-8 mx-auto text-gray-600 text-sm space-y-6">
-    <ul className="flex flex-row space-x-4">
+  return <div className="container px-2 py-8 mx-auto text-gray-600 text-sm space-y-6">
+    <ul className="flex flex-row gap-1">
       <li>
         <Link href="#top" className="flex items-center gap-x-1">
           <ArrowUp/>

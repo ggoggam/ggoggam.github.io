@@ -1,5 +1,6 @@
 "use client"
 
+import { set } from 'date-fns';
 import React, { useEffect, useRef, useState } from 'react';
 
 const NUM_BALLS = 5;
@@ -182,14 +183,11 @@ const MetaballsAnimation = () => {
 
   useEffect(() => {
     const updateDimensions = () => {
-      if (canvasRef.current) {
         setDimensions({
           width: window.innerWidth,
           height: window.innerHeight
         });
       }
-    };
-
     window.addEventListener('resize', updateDimensions);
     updateDimensions();
 
@@ -215,7 +213,7 @@ const MetaballsAnimation = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="w-full h-full absolute z-0 top-0 left-0"
+      className="w-full h-screen absolute z-0 top-0 left-0"
     />
   );
 };

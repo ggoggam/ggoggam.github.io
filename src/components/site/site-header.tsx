@@ -11,7 +11,7 @@ export default function SiteHeader() {
     const blogTextColor = isBlog ? "text-gray-50" : "text-gray-950"
     const tilTextColor = isBlog ? "text-gray-950" : "text-gray-50"
 
-    return <nav className="container mx-auto px-4 py-4 text-2xl md:text-6xl lg:text-8xl leading-tight tracking-tighter">
+    return <nav className="container mx-auto px-4 py-4 text-2xl md:text-4xl lg:text-6xl xl:text-8xl leading-tight tracking-tighter">
         <ul className="flex space-x-2 md:space-x-4">
             <li>
             <Link href="/" className="font-black text-gray-50">

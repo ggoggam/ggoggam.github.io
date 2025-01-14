@@ -23,7 +23,8 @@ export default function ClientWrapper({
 
   const pathname = usePathname()
   const isHome = pathname === '/'
-  const showBackground = (isHome || pathname === '/blog' || pathname === '/til') && !isMobile
+  const isAbout = pathname === '/about'
+  const showBackground = (isHome || pathname === '/blog' || pathname === '/til')
 
   // apply overlap-text only when metaballs are shown
   return (
@@ -33,7 +34,7 @@ export default function ClientWrapper({
         <SiteHeader/>
         {isHome && 
           <div className="container mx-auto px-4 md:px-6 py-4">
-            <div className="w-full md:h-[35vh]" />
+            <div className="w-full md:h-[20vh]" />
             <h2 className="text-2xl font-black leading-tight text-gray-50">
               RECENT POSTS
             </h2>
