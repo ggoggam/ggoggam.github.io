@@ -24,7 +24,7 @@ export default function ClientWrapper({
   const pathname = usePathname()
   const isHome = pathname === '/'
   const isAbout = pathname === '/about'
-  const showBackground = (isHome || pathname === '/blog' || pathname === '/til')
+  const showBackground = (isHome || pathname === '/blog' || pathname === '/til') && !isMobile
 
   // apply overlap-text only when metaballs are shown
   return (
