@@ -8,10 +8,11 @@ categories:
   - FastAPI
   - Dashboard
 ---
-As I was almost done with my academic work, I embarked on a quick side-project to create a dashboard to monitor server status in my lab.
-There used be one made by a former lab member, 
-but it was no longer being maintained and becoming outdated.
-My main focus on the implementation was to make it 1. simple 2. maintainable  3. modestly secure and 4. look nice. The final product looks like this (some details have been redacted):
+As I was wrapping up my academic work, I took on a quick side project to build a dashboard for monitoring server statuses in my lab. 
+There used to be a similar tool created by a former lab member, but it had become outdated and was no longer maintained.
+My primary focus for this new dashboard was to make it: 1. simple 2. maintainable  3. modestly secure and 4. look nice. 
+
+Here is the final product (with some details redacted):
 
 ### Home (Login)
 ![dashboard home](/asset/home.png)
@@ -23,14 +24,17 @@ My main focus on the implementation was to make it 1. simple 2. maintainable  3.
 ![dashboard](/asset/dashboard_detail.png)
 
 ## Setup
-My choice of frameworks was heavily dependent on maintainability of the project.
-Since most of the lab members are already familiar with python and has no prior knowledge on popular frontend framework such as React, 
-I decided to implement the web server with `fastapi`, a popular choice of ASGI framework in python.
-All of the UIs are written in vanilla HTML/CSS with `jinja` templates and DasiyUI[^1] for a nice-looking component library.
 
-I also employed HTMX for client interactivity (refer to my previous [post](/blog/htmx) for more details).
-Since I am not using any JS runtime, I put a minified JS libs for HTMX, Tailwind, and DaisyUI along with stylesheets to `static` folder.
-Thankfully, `fastapi` already provides an api for mounting static files, so that they can be served automatically:
+### Framework Choice
+When choosing frameworks, I prioritized maintainability. 
+Since most lab members were already familiar with Python but had no experience with popular frontend frameworks like React, I implemented the web server using FastAPI, a widely-used ASGI framework in Python.
+
+For the user interface, I relied on vanilla HTML/CSS, Jinja templates, and DaisyUI[^1], a lightweight component library that enhances Tailwind CSS.
+
+For interactivity, I opted for HTMX. If you’re unfamiliar with HTMX, check out my previous [post](/blog/htmx). 
+Since I avoided JavaScript runtimes, I included minified JS libraries for HTMX, Tailwind, and DaisyUI, along with their stylesheets, in the static folder.
+
+Thankfully, FastAPI makes serving static files incredibly simple:
 
 ```python
 from fastapi import FastAPI
@@ -41,10 +45,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 ```
 
 ## Templates
-The HTML templates were written with the help of `jinja2-fragments`[^2], which allows partial rendering of template by referring to the block name. 
+The HTML templates were powered by **Jinja2 Fragments**[^2], which allowed partial rendering of templates by targeting specific block names. This setup, combined with HTMX, made templates concise and easy to maintain.
 This makes for a concise template files for easier maintenance when coupled with HTMX.
-For instance, we have the `index.html` with `content` block.
 
+For example, here’s a snippet from index.html with a content block:
 ```html
 <!-- index.html -->
 <!-- some base template to inherit from -->
@@ -69,10 +73,11 @@ For instance, we have the `index.html` with `content` block.
 {% endblock %}
 ```
 
-Depending on the routes and the type of request, we can choose to return the entire template or parts of them like so. 
-Here, `/on-premise` returns the `content` block if moving from another page and the entire page if not.
-The `/on-premise/instances` returns the partially rendered block upon refresh.
+Depending on the route and request type, I could choose to return either the entire template or just parts of it. For instance:
+- /on-premise: Returns the content block for HTMX requests or the full page otherwise.
+- /on-premise/instances: Returns a partial block for lazy loading upon refresh.
 
+Here’s how these routes are implemented:
 ```python showLineNumbers
 # dependencies
 # check_session: checks for valid session cookie. if session is invalid or has expired, move to login page
@@ -118,13 +123,13 @@ async def get_on_premise_instances(
 ```
 
 ## Minor optimizations
-I have decided to use [`paramiko`](https://www.paramiko.org/) to remotely execute commands to gather information from different servers. 
-`paramiko` is a python implementation of the SSHv2 protocol, which makes it relatively safer than executing commands with `subprocess` or its alternatives.
-Even though the information is gathered concurrently, execution takes time, especially when gathering the GPU information via `nvidia-smi` command.
-Hence, I decided to use lazy-loading and pagination to hide the loading overhead.
-Thankfully, HTMX provides this functionality via `hx-trigger`. 
-We can implement a simple lazy-loading by calling paginated endpoint if the last loaded element is revealed to the user:
 
+To gather server information remotely, I used [`paramiko`](https://www.paramiko.org/), a Python implementation of the SSHv2 protocol. 
+This approach is safer than executing commands with subprocess or similar tools.
+
+Since commands like `nvidia-smi` (for GPU info) can be slow, I implemented lazy loading and pagination using HTMX. The `hx-trigger="revealed"` attribute in HTMX ensures that paginated endpoints are called only when the last loaded element is visible.
+
+Here’s an example of lazy loading:
 ```html
 {% if is_last %}
 <div class="collapse collapse-arrow bg-base-200" hx-get="/on-premise/instances?after={{ name }}&size=5" hx-trigger="revealed" hx-swap="afterend" hx-indicator="#page-indicator">
@@ -188,15 +193,14 @@ We can implement a simple lazy-loading by calling paginated endpoint if the last
 </div>
 {% endif %}
 ```
-To further speed up the loading process, I also implemented a time-to-live cache.
-Because all of service methods are implemented as `async` functions, I had to implement a wrapper for caching.
-You can refer to [this post](/blog/cache-async-py) for more details.
-I also implemented a quick and simple session management service so that only authorized users can access the information (our lab has a history of ).
+
+To speed things up further, I implemented a time-to-live cache for service methods (all written as async functions). 
+For details, refer to [my post](/blog/cache-async-py) on caching async functions.
+
+Additionally, I created a simple session management service to ensure that only authorized users could access the dashboard.
 
 ## Dockerize & Deploy
-Since the server rarely undergoes OS and software updates, I have decided to dockerize the application to ensure consistency and security. 
-My favorite choice of base image for python web framework is always `slim-buster` type, which is an extremely light-weight python image built on top of `alpine` linux.
-
+To ensure consistency and security, I containerized the application using Docker. I chose the lightweight slim-buster image as the base for Python:
 ```docker
 FROM python:3.10.8-slim-buster
 
@@ -212,7 +216,7 @@ COPY src /code
 ENTRYPOINT [ "python", "main.py" ]
 ```
 
-In addition to a nice documentation outlining the deployment process, I created a Github workflow that runs automatically upon creating a release tag.
+I also created a GitHub workflow to automate the release process:
 ```yaml
 name: Build Docker Image and Release
 
@@ -265,9 +269,9 @@ jobs:
           asset_content_type: application/gzip
 ```
 
-Overall, the project took less than a day to finish the basic features thanks to the simplicity that FastAPI and HTMX bring to the development. 
-I had to make minor changes to make the dashboard more mobile friendly and maintainable, but otherwise the dashboard was well-received by the lab members. 
-Hopefully it is put to good use.
+This project took less than a day to implement, thanks to the simplicity of FastAPI and HTMX. After some minor tweaks for mobile responsiveness, the dashboard was well-received by my lab members.
+
+Hopefully, it will remain a valuable tool for the team.
 
 [^1]: https://daisyui.com
 [^2]: https://github.com/sponsfreixes/jinja2-fragments
