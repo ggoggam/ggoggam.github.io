@@ -1,0 +1,26 @@
+---
+
+title: Squashing Commits with Merge Commits
+excerpt: Squashing commits with merge commits in Git
+date: 2025-02-18
+published: true
+categories:
+  - Git
+  - Development
+---
+
+We can 'squash' multiple commits in Git into a single commit to make things cleaner. It is easy to do when you are only rebasing the commits in a single branch without merge commits. However, things can get a bit tricky when you have merge commits in the history.
+
+You can do this easily by the following steps:
+
+```bash
+git checkout -b temp {main-branch}
+git merge --squash {feature-branch}
+git commit 
+git checkout {feature-branch}
+git reset --hard temp
+git branch -D temp
+git push -u origin {feature-branch} --force
+```
+
+This will squash all the commits in the `feature-branch` into a single commit and push it to the remote repository.
