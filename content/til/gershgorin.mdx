@@ -22,7 +22,7 @@ Then every eigenvalue of a square complex matrix $A$ lies within the union (or e
 Let $\lambda$ be an eigenvalue of $A$ and $\mathbf{x}$ be the corresponding eigenvector. 
 Find $i$ such that $i = \arg \max_{i} | x_i |$.
 Then we have $\sum_{j \neq i} a_{ij} x_j = (\lambda - a_{ii}) x_i$ from the definition of eigenvalue.
-We can apply triangle inequality and let $| x_j | / |x_j| \leq 1$ to get
+We can apply triangle inequality and let $| x_j | / |x_i| \leq 1$ to get
 
 $$
 |\lambda - a_{ii}| = \left| \sum_{j \neq i} \frac{a_{ij} x_j}{x_i} \right| \leq \sum_{j \neq i} \left| a_{ij} \right| \frac{\left| x_j \right|}{\left| x_i \right|} \leq \sum_{j \neq i} \left| a_{ij} \right|.
