@@ -1,0 +1,72 @@
+---
+
+title: Never use QueryDsl Predicate Executor
+excerpt: Just don't
+date: 2025-02-25
+published: true
+categories:
+  - Backend
+  - SQL
+---
+
+I personally like type-safe queries other than ORMs, and `querydsl` is a perfect middle ground between raw SQL queries and ORM. Spring Data JPA already provides `QueryDslPredicateExecutor` to execute queries based on `Predicate` instances from `querydsl`, but it lacks core functionalities such as joins, ordering, and limits.
+
+```kotlin
+@Repository
+interface UserRepository : JpaRepository<User, Long>, QueryDslPredicateExecutor<User>
+```
+
+Let's say we want to find a page of users ordered by name in descending order. The `findAll` method only take predicate and a `Pageable` instance, which is not enough to create a query with ordering:
+
+```kotlin
+import org.springframework.data.querydsl.QuerydslPredicateExecutor
+
+@Service
+class UserService(
+    private val userRepository: UserRepository
+) {
+    fun findUsers(pageable: Pageable): Page<User> {
+        // no ordering!
+        val predicate = QUser.user.name.isNotNull
+        return userRepository.findAll(predicate, pageable)
+    }
+}
+```
+
+Instead of using `QueryDslPredicateExecutor`, you can use `Querydsl` directly to create type-safe queries. 
+
+```kotlin
+import com.querydsl.jpa.impl.JPAQueryFactory
+
+data class Paginated<T>(
+    val data: List<T>,
+    val next: Long?
+)
+
+@Repository
+class UserRepository(
+    private val entityManager: EntityManager
+) {
+    private val queryFactory = JPAQueryFactory(entityManager)
+    
+    fun findUsers(pageSize: Int, next: Long?): Paginated<User> {
+        val query = queryFactory
+            .selectFrom(QUser.user)
+            .orderBy(QUser.user.name.desc())
+
+        next?.let {
+          queryFactory
+            .selectFrom(QUser.user)
+            .where(QUser.user.id.eq(it))
+            .fetchOne()?.let { cursor ->
+              query.where(QUser.user.name.lt(cursor.name))
+            }
+        }
+        
+        return Paginated(
+          items=query.limit((pageSize + 1).toLong()).fetch(),
+          next=items.get(pageSize - 1)?.id
+        )
+    }
+}
+```

@@ -1,0 +1,59 @@
+---
+
+title: A little hack for cursor-based pagination
+excerpt: Simple trick to handle cursor-based pagination
+date: 2025-02-13
+published: true
+categories:
+  - Backend
+  - SQL
+---
+
+Cursor-based pagination can have benefits over offset-based pagination especially when the number of records is huge.
+If the database has a lot of records, the database will have to skip the offset number of records before returning the result.
+On the otherhand, if the database is properly indexed, cursor-based pagination can be faster as it can directly jump to the record based on the cursor.
+
+As in any pagination methods, you need to return the next cursor to fetch the next page of records.
+A neat trick here is to fetch one (or more) records more than the page size to check if there is a next page.
+Here is a simple trick to handle cursor-based pagination in `querydsl` syntax:
+
+```kotlin
+import com.querydsl.jpa.impl.JPAQueryFactory
+
+data class Paginated<T>(
+    val data: List<T>,
+    val next: Long?
+)
+
+@Repository
+class UserRepository(
+    private val entityManager: EntityManager
+) {
+    private val queryFactory = JPAQueryFactory(entityManager)
+    
+    fun findUsers(pageSize: Int, next: Long?): Paginated<User> {
+        val query = queryFactory
+            .selectFrom(QUser.user)
+            .orderBy(QUser.user.name.desc())
+
+        next?.let {
+          queryFactory
+            .selectFrom(QUser.user)
+            .where(QUser.user.id.eq(it))
+            .fetchOne()?.let { cursor ->
+                query.where(QUser.user.name.lt(cursor.name))
+            }
+        }
+
+        // #1. fetch just 1 more record to check if there is a next page
+        val users = query
+            .limit((pageSize + 1).toLong())
+            .fetch()
+
+        // #2. check next cursor by checking the size of fetched records
+        val nextCursor = if (users.size > pageSize) users[pageSize - 1].id else null
+
+        return Paginated(users, nextCursor?.id)
+    }
+}
+```
