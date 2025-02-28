@@ -64,7 +64,7 @@ class UserRepository(
         }
         
         return Paginated(
-          items=query.limit((pageSize + 1).toLong()).fetch(),
+          items=query.limit((pageSize + 1).toLong()).fetch().take(pageSize),
           next=items.get(pageSize - 1)?.id
         )
     }

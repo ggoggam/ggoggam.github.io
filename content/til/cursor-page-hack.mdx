@@ -53,7 +53,7 @@ class UserRepository(
         // #2. check next cursor by checking the size of fetched records
         val nextCursor = if (users.size > pageSize) users[pageSize - 1].id else null
 
-        return Paginated(users, nextCursor?.id)
+        return Paginated(users.take(pageSize), nextCursor?.id)
     }
 }
 ```
