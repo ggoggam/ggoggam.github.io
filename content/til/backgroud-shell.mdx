@@ -1,0 +1,36 @@
+---
+
+title: Background Shell
+excerpt: Some tricks to run a command
+date: 2025-03-01
+published: true
+categories:
+  - Shell
+  - Development
+---
+
+Whenever we run a command in a shell, it's tied to the shell. If we exit the shell, then the command will exit as well.
+
+```shell
+# will exit when the shell is closed
+$ sleep 100 &
+[1] 12345
+```
+
+To run a command in the background and keep it running even after the shell is closed, we can use the `nohup` command.
+
+```shell
+$ nohup sleep 100 &
+[1] 12345
+```
+
+This is commonly used when running a long-running process such as training. But what if we forgot to run the command in the background? We can suspend the command, run it in the background, and then disown it.
+
+```shell
+$ sleep 100
+^Z
+shell: suspended   sleep 100
+$ bg
+[1] + continued   sleep 100
+$ disown %1
+```
