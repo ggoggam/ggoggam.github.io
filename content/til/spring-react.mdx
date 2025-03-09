@@ -83,3 +83,9 @@ spring:
       static-locations: file:src/main/resources/static
 ```
 This ensures that the server will rebuild and restart when the static files change.
+
+
+## Some other tips
+With golang, it is common to use `fiber` nowadays. With the help of `air`, we can watch for changes in the backend files and restart the server. 
+One of the great things about building a web app with golang is that build is reasonably fast (compared to Spring Boot), hence we can iterate quickly.
+It is also nice to have a single binary that will take care of everything, including the frontend and backend.
