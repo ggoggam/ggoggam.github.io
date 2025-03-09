@@ -1,0 +1,85 @@
+---
+
+title: Spring + React
+excerpt: Setting up for development with Spring Boot and React
+date: 2025-03-09
+published: true
+categories:
+  - Spring Boot
+  - React
+  - Development
+---
+
+# Fullstack Development
+Noadays it is common to use NextJS for fullstack and server side rendering applications. 
+While it is powerful and easy to use out of the box, it does not provide common heavyweight server side features such as task queues, scheduled tasks, and background processing.
+
+## Backend + React
+Hence it is common to use some backend framework to delegate such tasks. For golang, it is common to see fiber or gin as the backend framework.
+For Java and Kotlin, Spring Boot has always been a popular choice, although it is not apples to apples comparison with golang.
+
+We can use Spring Boot to handle the backend and (vanilla) React to handle the frontend. 
+The problem is that we do not want to have separate servers for the frontend and backend.
+One way to do this is by building the frontend then serving it as static files in the backend.
+
+# Spring Boot
+Generate a Spring Boot project by visiting [Spring Initializr](https://start.spring.io/).
+Then add the following dependecy:
+
+```kotlin
+runtimeOnly("org.springframework.boot:spring-boot-devtools")
+```
+
+Also add the following line in the `*Application.kt` file, which serves as the entry point for the Spring Boot application:
+
+```kotlin
+@SpringBootApplication
+class Application : WebMvcConfigurer {
+    override fun addViewControllers(registry: ViewControllerRegistry) {
+        registry.addViewController("/").setViewName("index.html")
+    }
+}
+```
+
+
+# Vite
+Vite is a build tool that aims to provide a faster development experience for modern web projects.
+Build the frontend by watching the files for change, then output the files the `src/main/resources/static` directory, 
+which is the default directory for serving static files in Spring Boot.
+
+First, add the following line in the `vite.config.ts` file:
+```typescript
+export default defineConfig({
+  build: {
+    outDir: '../src/main/resources/static',
+  },
+})
+```
+
+Then run the following commands:
+```shell
+$ pnpm init vite@latest
+$ ... # follow the instructions
+
+$ cd client
+$ pnpm install
+$ vite build --watch --emptyOutDir
+```
+
+# Watching for Changes for Static files
+Spring Boot by default does not watch for changes in the static files.
+We have added the devtools dependency above, and it can both 1. restart and 2. reload (refresh) the server when the file changes. 
+
+To enable the server to watch for changes in the static files, add the following line in the `application.yaml` file:
+```yaml
+spring:
+  devtools:
+    restart:
+      enabled: true
+      additional-paths: file:src/main/resources/static
+
+  web:
+    resources:
+      static-locations: file:src/main/resources/static
+```
+This ensures that the server will rebuild and restart when the static files change.
