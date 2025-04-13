@@ -47,11 +47,14 @@ It's quite straightforward! Plus, there are JWT libraries available that handle 
 In practice, if an attacker gains access to a valid JWT, they essentially have the authority of the victim. To mitigate this risk, many implementations aim to reduce the likelihood of JWT theft, even when the token is transmitted over a supposedly secure protocol like HTTPS.
 
 ### Refresh token
-One common method is to give the JWT used for client-server communication (often called the access token) a short expiry. To refresh the expired JWT, a refresh token is used, securely stored on both client and server.
+JWT, in its essence, is a stateless authentication method.
+This means that the server does not need to store any session information about the user.
+The server can simply verify the token by checking the signature with the secret key, and the payload contains all the necessary information about the user.
+However, this also means that the server cannot invalidate a token once it is issued. If a JWT is stolen, the attacker can use it until it expires, which can be a long time depending on the expiry time set in the payload.
+To mitigate this risk, many implementations use a combination of short-lived access tokens and long-lived refresh tokens. The access token is used for authentication and authorization, while the refresh token is used to obtain a new access token when the old one expires.
 
-When the access token expires, a refresh request is sent to the server with the refresh token. The server validates the token by comparing it with one stored in the server database.
-
-If a valid, matching refresh token is found in the database, the server replaces the token with a new one and returns it. Otherwise, the user will be prompted to log in again. Following standard security measures such as encrypted storage should make everything straightforward, right?
+The refresh token is typically stored securely on the client side, and it is used to obtain a new access token when the old one expires. The refresh token is usually long-lived, meaning it can be used to obtain new access tokens for an extended period of time. This allows the user to remain authenticated without having to log in again.
+Although it is usually securely stored on the client side, refresh token is exposed to the same risk as the access token. Hence, some servers implement additional security measures such as blacklisting or rotating refresh tokens to mitigate such risks.
 
 ### Race conditions
 
