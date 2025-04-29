@@ -20,7 +20,7 @@ export default function PostArticle({ slug, title, date, content }: PostArticleP
         <Giscus 
             id="comments"
             repo="ggoggam/ggoggam.github.io"
-            repoId="R_kgDOKvkuXQ="
+            repoId="R_kgDOKvkuXQ"
             category="General"
             categoryId="DIC_kwDOKvkuXc4Cjadh"
             mapping="pathname"
