@@ -9,7 +9,6 @@ import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import rehypeKatex from "rehype-katex";
 import rehypeSlug from "rehype-slug";
 import rehypePrettyCode from "rehype-pretty-code";
-import rehypeAutoLinkHeadings from "rehype-autolink-headings";
 import path from "path";
 import { readdirSync } from "fs";
 
@@ -50,7 +49,6 @@ export default defineConfig({
         ],
         rehypePlugins: [
           rehypeSlug,
-          [rehypeAutoLinkHeadings, { behavior: "wrap", properties: { className: "anchor" } }],
           [rehypePrettyCode, { keepBackground: false, theme: "one-dark-pro" }],
           rehypeKatex,
         ],
