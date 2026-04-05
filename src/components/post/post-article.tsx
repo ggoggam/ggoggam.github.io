@@ -34,7 +34,7 @@ export default function PostArticle({
                 key={tag}
                 to={`/${type}`}
                 search={{ tag }}
-                className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors"
+                className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors no-underline"
               >
                 {tag}
               </Link>
