@@ -1,6 +1,6 @@
 ## ggoggam.github.io
 
-Personal blog and portfolio built with React, TanStack Router, and Vite. Content is authored in MDX with support for math rendering (KaTeX), syntax highlighting (Shiki), and GitHub Flavored Markdown.
+Personal blog built with React, TanStack Router, and Vite. Content is authored in MDX with support for math rendering (KaTeX), syntax highlighting (Shiki), and GitHub Flavored Markdown.
 
 ### Tech Stack
 
