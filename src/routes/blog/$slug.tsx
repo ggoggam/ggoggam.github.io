@@ -13,6 +13,7 @@ export const Route = createFileRoute("/blog/$slug")({
     return {
       title: fm.title as string,
       date: format(new Date(fm.date), "yyyy-MM-dd"),
+      tags: (fm.tags as string[]) ?? [],
       Component: mod.default as React.ComponentType<any>,
     };
   },
@@ -21,7 +22,16 @@ export const Route = createFileRoute("/blog/$slug")({
 });
 
 function BlogPostPage() {
-  const { Component, title, date } = Route.useLoaderData();
+  const { Component, title, date, tags } = Route.useLoaderData();
   const { slug } = Route.useParams();
-  return <PostArticle slug={slug} title={title} date={date} Component={Component} />;
+  return (
+    <PostArticle
+      slug={slug}
+      title={title}
+      date={date}
+      tags={tags}
+      type="blog"
+      Component={Component}
+    />
+  );
 }
