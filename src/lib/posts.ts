@@ -1,11 +1,12 @@
 import { format } from "date-fns";
 
-type PostMeta = {
+export type PostMeta = {
   slug: string;
   title: string;
   date: string;
   excerpt: string;
   published: boolean;
+  tags: string[];
   type: "blog" | "til";
   url: string;
 };
@@ -19,6 +20,7 @@ function extractMeta(filePath: string, mod: any, type: "blog" | "til"): PostMeta
     date: format(new Date(fm.date), "yyyy-MM-dd"),
     excerpt: fm.excerpt as string,
     published: fm.published as boolean,
+    tags: (fm.tags as string[]) ?? [],
     type,
     url: `/${type}/${slug}`,
   };

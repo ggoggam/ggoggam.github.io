@@ -13,6 +13,7 @@ export const Route = createFileRoute("/til/$slug")({
     return {
       title: fm.title as string,
       date: format(new Date(fm.date), "yyyy-MM-dd"),
+      tags: (fm.tags as string[]) ?? [],
       Component: mod.default as React.ComponentType<any>,
     };
   },
@@ -21,7 +22,16 @@ export const Route = createFileRoute("/til/$slug")({
 });
 
 function TILPostPage() {
-  const { Component, title, date } = Route.useLoaderData();
+  const { Component, title, date, tags } = Route.useLoaderData();
   const { slug } = Route.useParams();
-  return <PostArticle slug={slug} title={title} date={date} Component={Component} />;
+  return (
+    <PostArticle
+      slug={slug}
+      title={title}
+      date={date}
+      tags={tags}
+      type="til"
+      Component={Component}
+    />
+  );
 }
