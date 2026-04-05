@@ -1,21 +1,106 @@
 import type { MDXComponents } from "mdx/types";
-import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+
+function CopyLinkButton({ id }: { id: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const url = `${window.location.origin}${window.location.pathname}#${id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      aria-label="Copy link to heading"
+      className="ml-2 text-gray-400 hover:text-gray-600 align-middle"
+    >
+      {copied ? (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </svg>
+      )}
+    </button>
+  );
+}
 
 export const mdxComponents: MDXComponents = {
-  h1: (props) => <h1 className="text-2xl font-bold mt-8 mb-4" {...props} />,
-  h2: (props) => <h2 className="text-xl font-bold mt-8 mb-3" {...props} />,
-  h3: (props) => <h3 className="text-lg font-bold mt-6 mb-2" {...props} />,
+  h1: ({ id, children, ...props }) => (
+    <h1 id={id} className="text-2xl font-bold mt-8 mb-4" {...props}>
+      {id ? (
+        <a href={`#${id}`} className="hover:underline">
+          {children}
+        </a>
+      ) : (
+        children
+      )}
+      {id && <CopyLinkButton id={id} />}
+    </h1>
+  ),
+  h2: ({ id, children, ...props }) => (
+    <h2 id={id} className="text-xl font-bold mt-8 mb-3" {...props}>
+      {id ? (
+        <a href={`#${id}`} className="hover:underline">
+          {children}
+        </a>
+      ) : (
+        children
+      )}
+      {id && <CopyLinkButton id={id} />}
+    </h2>
+  ),
+  h3: ({ id, children, ...props }) => (
+    <h3 id={id} className="text-lg font-bold mt-6 mb-2" {...props}>
+      {id ? (
+        <a href={`#${id}`} className="hover:underline">
+          {children}
+        </a>
+      ) : (
+        children
+      )}
+      {id && <CopyLinkButton id={id} />}
+    </h3>
+  ),
   p: (props) => <p className="leading-relaxed my-4" {...props} />,
   ul: (props) => <ul className="list-disc pl-6 my-4" {...props} />,
   ol: (props) => <ol className="list-decimal pl-6 my-2" {...props} />,
   li: (props) => <li className="my-1" {...props} />,
   a: ({ href, children, ...props }) => {
-    const isInternal = href?.startsWith("/");
+    const isInternal = href?.startsWith("/") || href?.startsWith("#");
     if (isInternal) {
       return (
-        <Link to={href as string} {...props}>
+        <a href={href} {...props}>
           {children}
-        </Link>
+        </a>
       );
     }
     return (
