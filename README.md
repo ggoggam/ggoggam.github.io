@@ -1,31 +1,47 @@
-## NextJS Template
+## ggoggam.github.io
 
-This repository contains the Next JS migrated source for the personal static blog hosted in [ggoggam.github.io](https://ggoggam/github.io).
+Personal blog and portfolio built with React, TanStack Router, and Vite. Content is authored in MDX with support for math rendering (KaTeX), syntax highlighting (Shiki), and GitHub Flavored Markdown.
 
-For those who are looking to build their own blog with Next JS, you are welcome to refer to this source code for developing your own.
+### Tech Stack
+
+- **React 19** + **TypeScript**
+- **TanStack Router** (file-based routing)
+- **Vite 6** (build tooling)
+- **Tailwind CSS** (styling)
+- **MDX** with remark/rehype plugins (content)
+- **Giscus** (comments via GitHub Discussions)
 
 ### Development
 
-For JS runtime, we primarily use [`bun`](https://bun.sh). Install bun by:
+This project uses [`bun`](https://bun.sh) as the JavaScript runtime and package manager.
 
 ```bash
-curl -fsSL https://bun.sh/install | bash
-```
+# Install dependencies
+bun install
 
-To run the development server at `localhost:3000`:
-
-```bash
+# Start dev server at localhost:3000
 bun run dev
-```
 
-Once done with development, build and export the static site by simply running
-
-```
-# or equivalently `bun next build`
+# Build for production
 bun run build
+
+# Lint and format
+bun run lint:fix
+bun run format
+```
+
+### Project Structure
+
+```
+src/
+  routes/       File-based routes (blog, til, about, index)
+  components/   React components and MDX renderers
+  lib/          Utilities (content loading, image helpers)
+  app/          Global styles
+content/        MDX blog and TIL posts
+public/         Static assets
 ```
 
 ### Deployment
 
-The custom deployment is done via Github Actions, whose workflow is provided in `.github/workflows/deployment.yaml`.
-Although the current version does not fully support SEO and sitemap among other functionalities, we plan to support them in the near future by taking advantage of `actions/configure-pages` action.
+Static site deployment to GitHub Pages is handled automatically via GitHub Actions (`.github/workflows/`).
