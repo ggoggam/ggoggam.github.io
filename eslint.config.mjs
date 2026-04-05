@@ -1,29 +1,23 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import js from "@eslint/js";
+import reactHooks from "eslint-plugin-react-hooks";
+import tseslint from "typescript-eslint";
+import prettier from "eslint-config-prettier";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.config({
-    extends: [
-      "next/core-web-vitals",
-      "next/typescript",
-    ],
+export default tseslint.config(
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    plugins: {
+      "react-hooks": reactHooks,
+    },
     rules: {
-      "@typescript-eslint/no-unused-vars": "off",
-      "@typescript-eslint/no-unused-expressions": "off",
+      ...reactHooks.configs.recommended.rules,
       "@typescript-eslint/no-explicit-any": "off",
-      "@next/next/no-css-tags": "off",
-      "react-hooks/exhaustive-deps": "off",
-      "react/no-children-prop": "off",
-    }
-  })
-];
-
-export default eslintConfig;
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+  prettier,
+  {
+    ignores: ["dist/", "node_modules/", "src/routeTree.gen.ts"],
+  }
+);

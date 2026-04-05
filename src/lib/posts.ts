@@ -1,133 +1,48 @@
-import fs from 'fs'
-import path from 'path'
-import matter from 'gray-matter'
-import { compileMDX } from 'next-mdx-remote/rsc'
-import { CustomMDXComponents } from '@/components/mdx-component';
-import remarkMath from 'remark-math'
-import rehypeKatex from 'rehype-katex'
-import { format } from 'date-fns'
-import remarkGfm from 'remark-gfm';
-import rehypeSlug from 'rehype-slug';
-import rehypePrettyCode from 'rehype-pretty-code';
-import rehypeAutoLinkHeadings from 'rehype-autolink-headings';
+import { format } from "date-fns";
 
-const contentDirectory = path.join(process.cwd(), 'content')
-const tilDirectory = path.join(contentDirectory, 'til')
-const blogDirectory = path.join(contentDirectory, 'blog')
+type PostMeta = {
+  slug: string;
+  title: string;
+  date: string;
+  excerpt: string;
+  published: boolean;
+  type: "blog" | "til";
+  url: string;
+};
 
-// Ensure content directories exist
-function ensureDirectoriesExist() {
-  [contentDirectory, tilDirectory, blogDirectory].forEach((dir) => {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
-    }
-  })
-}
-
-ensureDirectoriesExist()
-
-// Render a post from its file contents
-export async function renderPost(fileContents: string) {
-  const { content, data } = matter(fileContents)
-  const prettyCodeOptions = {
-    keepBackground: false,
-    theme: 'one-dark-pro',
-  }
-  const { frontmatter, content: compiledContent } = await compileMDX({
-    source: content,
-    options: { 
-      parseFrontmatter: true,
-      mdxOptions: {
-        remarkPlugins: [remarkMath, remarkGfm],
-        rehypePlugins: [
-          rehypeSlug,
-          [rehypeAutoLinkHeadings, { behavior: 'wrap', properties: { className: 'anchor' } }],
-          [rehypePrettyCode, prettyCodeOptions],
-          rehypeKatex
-        ],
-      },
-    },
-    components: CustomMDXComponents({}),
-  })
-
-  return {
-    frontmatter,
-    content: compiledContent,
-  }
-}
-
-// Get recent posts for the home page
-export async function getRecentPosts() {
-  const tilPosts = await getTILPosts()
-  const blogPosts = await getBlogPosts()
-  
-  return [...tilPosts, ...blogPosts]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 6)
-}
-
-// Get multiple posts for preview
-async function getPostsFromDirectory(directory: string, type: 'til' | 'blog') {
-  if (!fs.existsSync(directory)) {
-    return []
-  }
-
-  const fileNames = fs.readdirSync(directory)
-  const allPostsData = await Promise.all(
-    fileNames.map(async (fileName) => {
-      const slug = fileName.replace(/\.mdx$/, '')
-      const fullPath = path.join(directory, fileName)
-      const fileContents = fs.readFileSync(fullPath, 'utf8')
-      const { content, data } = matter(fileContents)
-
-      return {
-        slug,
-        published: data.published as boolean,
-        title: data.title as string,
-        date: format(data.date, 'yyyy-MM-dd'),
-        excerpt: data.excerpt as string,
-        type,
-        url: `/${type}/${slug}`,
-      }
-    })
-  )
-
-  return allPostsData.filter(a => a.published).sort((a, b) => (a.date < b.date ? 1 : -1))
-}
-
-export async function getTILPosts() {
-  return getPostsFromDirectory(tilDirectory, 'til')
-}
-
-export async function getBlogPosts() {
-  return getPostsFromDirectory(blogDirectory, 'blog')
-}
-
-// Get a single post by slug
-async function getPostFromDirectory(directory: string, slug: string) {
-  const fullPath = path.join(directory, `${slug}.mdx`)
-  if (!fs.existsSync(fullPath)) {
-    return null
-  }
-
-  const fileContents = fs.readFileSync(fullPath, 'utf8')
-  const { content, data } = matter(fileContents)
-  const { frontmatter, content: compiledContent } = await renderPost(fileContents)
-
+function extractMeta(filePath: string, mod: any, type: "blog" | "til"): PostMeta {
+  const slug = filePath.match(/\/([^/]+)\.mdx$/)?.[1] ?? "";
+  const fm = mod.frontmatter ?? {};
   return {
     slug,
-    title: data.title as string,
-    date: format(data.date, 'yyyy-MM-dd'),
-    content: compiledContent
-  }
+    title: fm.title as string,
+    date: format(new Date(fm.date), "yyyy-MM-dd"),
+    excerpt: fm.excerpt as string,
+    published: fm.published as boolean,
+    type,
+    url: `/${type}/${slug}`,
+  };
 }
 
-export async function getTILPost(slug: string) {
-  return getPostFromDirectory(tilDirectory, slug)
+const blogModules = import.meta.glob("/content/blog/*.mdx", { eager: true });
+const tilModules = import.meta.glob("/content/til/*.mdx", { eager: true });
+
+export function getBlogPosts(): PostMeta[] {
+  return Object.entries(blogModules)
+    .map(([p, mod]) => extractMeta(p, mod, "blog"))
+    .filter((p) => p.published)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
-
-export async function getBlogPost(slug: string) {
-  return getPostFromDirectory(blogDirectory, slug)
+export function getTILPosts(): PostMeta[] {
+  return Object.entries(tilModules)
+    .map(([p, mod]) => extractMeta(p, mod, "til"))
+    .filter((p) => p.published)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
+export function getRecentPosts(): PostMeta[] {
+  return [...getBlogPosts(), ...getTILPosts()]
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .slice(0, 6);
+}

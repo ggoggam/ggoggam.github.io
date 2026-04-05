@@ -2,9 +2,9 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: 'main'
+    branches: "main"
     paths-ignore:
-      - 'README.md'
+      - "README.md"
 
 jobs:
   build:
@@ -36,7 +36,7 @@ jobs:
 
       - name: Build
         env:
-          BASE_PATH: '/${{ steps.configure_pages.outputs.base_path }}'
+          BASE_PATH: "/${{ steps.configure_pages.outputs.base_path }}"
         run: |
           bun run build
 
@@ -44,7 +44,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           # this should match the `pages` option in your adapter-static options
-          path: './out'
+          path: "./out"
 
   deploy:
     needs: build
