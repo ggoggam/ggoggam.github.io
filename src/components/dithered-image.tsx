@@ -16,6 +16,7 @@ interface DitheredImageProps {
   dither?: DitherMode;
   /** RGB dot color tuple */
   dotColor?: [number, number, number];
+  className?: string;
   /** Pixels per second the shockwave travels */
   shockwaveSpeed?: number;
   /** Half-width of the shockwave ring in pixels */
@@ -266,6 +267,7 @@ export default function DitheredImage({
   shockwaveWidth = 25,
   shockwaveStrength = 12,
   shockwaveDuration = 1500,
+  className,
 }: DitheredImageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<HalftoneState | null>(null);
@@ -432,6 +434,10 @@ export default function DitheredImage({
   }, [src, gridSpacing, dotScale, invert, dither, swConfig]);
 
   return (
-    <canvas ref={canvasRef} style={{ width, height, display: "block", cursor: "crosshair" }} />
+    <canvas
+      ref={canvasRef}
+      style={{ width, height, display: "block", cursor: "crosshair" }}
+      className={className}
+    />
   );
 }

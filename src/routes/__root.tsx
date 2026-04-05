@@ -1,5 +1,5 @@
 import { createRootRoute, Outlet, useRouterState } from "@tanstack/react-router";
-import MetaballsAnimation from "@/components/metaball";
+import DitheredImage from "@/components/dithered-image";
 import SiteHeader from "@/components/site/site-header";
 import SiteFooter from "@/components/site/site-footer";
 import { Toaster } from "@/components/ui/toaster";
@@ -24,8 +24,23 @@ function RootLayout() {
 
   return (
     <>
-      {showBackground && <MetaballsAnimation />}
-      <header className="relative z-10 overlap-metaball">
+      {showBackground && (
+        <div className="fixed inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <div className="pointer-events-auto">
+            <DitheredImage
+              src="/ggoggam/ggoggam_1.jpg"
+              width={256}
+              height={256}
+              gridSpacing={1}
+              dotScale={0.85}
+              dither="atkinson"
+              dotColor={[30, 30, 30]}
+              className="rounded-xl"
+            />
+          </div>
+        </div>
+      )}
+      <header className="relative z-10">
         <SiteHeader />
         {isHome && (
           <div className="container mx-auto px-4 md:px-6 py-4">
