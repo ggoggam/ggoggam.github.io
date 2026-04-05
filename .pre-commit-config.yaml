@@ -1,0 +1,23 @@
+repos:
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        entry: bun run format:check
+        language: system
+        types_or: [javascript, jsx, ts, tsx, css, json, markdown, yaml]
+        pass_filenames: false
+
+      - id: eslint
+        name: eslint
+        entry: bun run lint
+        language: system
+        types_or: [javascript, jsx, ts, tsx]
+        pass_filenames: false
+
+      - id: typecheck
+        name: typecheck
+        entry: bun run typecheck
+        language: system
+        types_or: [ts, tsx]
+        pass_filenames: false

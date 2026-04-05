@@ -15,9 +15,10 @@ However, there are times where we need to cache the output of the result of asyn
 In synchronous python, it is usually done with cache implementations such as LRU (Least Recently Used) cache in `functools` package, but it is not applicable to async functions since they return coroutine, not function outputs. Hence we need to implement a cache, preferably in the form of decorator for a concise code.
 
 ## Defining LRU cache
-In order to do this, we shall first define a key that will be used to identify arguments to a function. 
+
+In order to do this, we shall first define a key that will be used to identify arguments to a function.
 Note that it should be **hashable** so that it can be stored as a key in a dictionary (hash map).
-We will focus on implementing LRU cache, which is basic yet one of most commonly used caching algorithm, notably in memory paging. 
+We will focus on implementing LRU cache, which is basic yet one of most commonly used caching algorithm, notably in memory paging.
 
 ```python showLineNumbers
 class HashableKey:
@@ -28,7 +29,7 @@ class HashableKey:
 
     def __eq__(self, other: Any) -> bool:
         return hash(self) == hash(other)
-    
+
     def __hash__(self) -> int:
         def _hash(param: Any):
             if isinstance(param, tuple):
@@ -48,12 +49,12 @@ class LeastRecentlyUsedCache(OrderedDict):
     def __init__(self, max_size: Optional[int] = None, *args, **kwargs):
         self.max_size = max_size
         super().__init__(*args, **kwargs)
-    
+
     def __getitem__(self, key: Any) -> Any:
         value = super().__getitem__(key)
         self.move_to_end(key)
         return value
-    
+
     def __setitem__(self, key: Any, value: Any):
         super().__setitem__(key, value)
         if self.max_size and len(self) > self.max_size:
@@ -62,11 +63,10 @@ class LeastRecentlyUsedCache(OrderedDict):
             del self[oldest]
 ```
 
-
-
 ## Defining TTL cache
 
 To define a time-to-live (TTL) cache, one can extend LRU to check for expiration of the cached results.
+
 ```python
 class TimeToLiveCache(LeastRecentlyUsedCache):
     def __init__(
@@ -95,7 +95,8 @@ class TimeToLiveCache(LeastRecentlyUsedCache):
 ```
 
 ## Defining a wrapper
-For a wrapper (decorator), we can define the following wrapper class using the aforementioned key and cache implementations. 
+
+For a wrapper (decorator), we can define the following wrapper class using the aforementioned key and cache implementations.
 
 ```python
 class async_lru_cache:
@@ -109,8 +110,9 @@ class async_lru_cache:
                 return self.lru[key]
             self.lru[key] = await func(*args, **kwargs)
             return self.lru[key]
-        return wrapper        
+        return wrapper
 ```
+
 The wrapper for TTL can be written in a similar way; just replace `self.lru` with an instance of TTL cache defined above.
 Now, we can use this with an asynchronous function.
 

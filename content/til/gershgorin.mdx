@@ -1,5 +1,4 @@
 ---
-
 title: Gershgorin Circle Theorem
 excerpt: One of my favorite theorems in linear algebra
 date: 2025-02-13
@@ -19,7 +18,7 @@ Then every eigenvalue of a square complex matrix $A$ lies within the union (or e
 
 ### Proof
 
-Let $\lambda$ be an eigenvalue of $A$ and $\mathbf{x}$ be the corresponding eigenvector. 
+Let $\lambda$ be an eigenvalue of $A$ and $\mathbf{x}$ be the corresponding eigenvector.
 Find $i$ such that $i = \arg \max_{k} | x_k |$.
 Then we have $\sum_{j \neq i} a_{ij} x_j = (\lambda - a_{ii}) x_i$ from the definition of eigenvalue.
 We can apply triangle inequality and let $| x_j | / |x_i| \leq 1$ to get
@@ -29,17 +28,17 @@ $$
 $$
 
 ### Visualization
-We can visualize the Gershgorin circles for the matrix $A = \begin{bmatrix} 4 & -1 & 0 \\ -1 & 3 & -1 \\ 0 & -1 & 2 \end{bmatrix}$. 
+
+We can visualize the Gershgorin circles for the matrix $A = \begin{bmatrix} 4 & -1 & 0 \\ -1 & 3 & -1 \\ 0 & -1 & 2 \end{bmatrix}$.
 
 <div className="container flex justify-center">
-    <canvas id="canvas" width="600" height="600"></canvas>
+  <canvas id="canvas" width="600" height="600"></canvas>
 </div>
 
 The eigenvalues are $3 \pm \sqrt{3}$ and $3$, which all lie within the circles.
 
-
 <script>
-{`
+  {`
     // Get the canvas and context
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
@@ -142,5 +141,4 @@ The eigenvalues are $3 \pm \sqrt{3}$ and $3$, which all lie within the circles.
     const circles = computeGershgorinCircles(matrix);
     drawCircles(circles);
 `}
-
 </script>

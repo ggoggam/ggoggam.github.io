@@ -1,5 +1,4 @@
 ---
-
 title: Squashing Commits with Merge Commits
 excerpt: Squashing commits with merge commits in Git
 date: 2025-02-18
@@ -16,7 +15,7 @@ You can do this easily by the following steps:
 ```bash
 git checkout -b temp {main-branch}
 git merge --squash {feature-branch}
-git commit 
+git commit
 git checkout {feature-branch}
 git reset --hard temp
 git branch -D temp

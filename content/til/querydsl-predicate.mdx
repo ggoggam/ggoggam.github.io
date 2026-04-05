@@ -1,5 +1,4 @@
 ---
-
 title: Never use QueryDsl Predicate Executor
 excerpt: Just don't
 date: 2025-02-25
@@ -33,7 +32,7 @@ class UserService(
 }
 ```
 
-Instead of using `QueryDslPredicateExecutor`, you can use `Querydsl` directly to create type-safe queries. 
+Instead of using `QueryDslPredicateExecutor`, you can use `Querydsl` directly to create type-safe queries.
 
 ```kotlin
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -48,7 +47,7 @@ class UserRepository(
     private val entityManager: EntityManager
 ) {
     private val queryFactory = JPAQueryFactory(entityManager)
-    
+
     fun findUsers(pageSize: Int, next: Long?): Paginated<User> {
         val query = queryFactory
             .selectFrom(QUser.user)
@@ -62,7 +61,7 @@ class UserRepository(
               query.where(QUser.user.name.lt(cursor.name))
             }
         }
-        
+
         return Paginated(
           items=query.limit((pageSize + 1).toLong()).fetch().take(pageSize),
           next=items.get(pageSize - 1)?.id
