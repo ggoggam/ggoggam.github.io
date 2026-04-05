@@ -26,7 +26,7 @@
 }
 
 .prose code {
-  background-color: rgb(243 244 246);
+  background-color: hsl(var(--secondary));
   border-radius: 0.25rem;
   padding: 0.125rem 0.25em;
 }
@@ -105,5 +105,6 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Pretendard Variable", Pretendard, sans-serif;
   }
 }

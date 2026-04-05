@@ -1,6 +1,6 @@
 import Giscus from "@giscus/react";
 import type { MDXComponents } from "mdx/types";
-import { CustomMDXComponents } from "@/components/mdx-component";
+import { mdxComponents } from "@/components/mdx-component";
 
 export type PostArticleProps = {
   slug: string;
@@ -19,7 +19,7 @@ export default function PostArticle({ slug: _slug, title, date, Component }: Pos
         </time>
       </header>
       <div className="prose lg:prose-xl mb-8">
-        <Component components={CustomMDXComponents({})} />
+        <Component components={mdxComponents} />
       </div>
       <Giscus
         id="comments"
