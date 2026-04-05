@@ -9,16 +9,13 @@ export type PostPreviewProps = {
   type: "til" | "blog";
 };
 
-export default function PostPreview({ slug, title, date, excerpt, url }: PostPreviewProps) {
+export default function PostPreview({ slug, title, date, url }: PostPreviewProps) {
   return (
-    <div key={slug} className="bg-white p-6 rounded-lg shadow-sm">
-      <h3 className="text-xl font-black mb-2">
-        <Link to={url} className="hover:underline">
-          {title.toUpperCase()}
-        </Link>
-      </h3>
-      <p className="text-gray-400 mb-2">{date}</p>
-      <p className="text-gray-500 line-clamp-2">{excerpt}</p>
-    </div>
+    <li key={slug} className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4">
+      <time className="text-sm text-gray-400 shrink-0 tabular-nums">{date}</time>
+      <Link to={url} className="hover:text-gray-600">
+        {title}
+      </Link>
+    </li>
   );
 }

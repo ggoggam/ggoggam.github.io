@@ -11,14 +11,14 @@ export type PostArticleProps = {
 
 export default function PostArticle({ slug: _slug, title, date, Component }: PostArticleProps) {
   return (
-    <article className="max-w-3xl mx-auto py-4 md:py-8">
+    <article>
       <header className="mb-8">
-        <h1 className="text-4xl font-black tracking-tight mb-2">{title.toUpperCase()}</h1>
-        <time className="text-gray-500" dateTime={date}>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">{title}</h1>
+        <time className="text-sm text-gray-400" dateTime={date}>
           {date}
         </time>
       </header>
-      <div className="prose lg:prose-xl mb-8">
+      <div className="prose lg:prose-lg mb-12">
         <Component components={mdxComponents} />
       </div>
       <Giscus

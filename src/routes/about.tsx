@@ -1,12 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 import { getImages } from "@/lib/images";
 
 export const Route = createFileRoute("/about")({
@@ -16,48 +8,34 @@ export const Route = createFileRoute("/about")({
 function AboutPage() {
   const imageFileNames = getImages();
   return (
-    <div className="max-w-2xl mx-auto flex flex-col space-y-4 py-4 md:py-8">
-      <div className="max-w-2xl mx-auto flex flex-col space-y-4 py-4 md:py-8">
-        <h1 className="font-black text-4xl">ABOUT</h1>
-        <p className="leading-relaxed">
+    <div className="space-y-8">
+      <h1 className="text-2xl font-bold">About</h1>
+      <div className="space-y-4 leading-relaxed text-gray-700">
+        <p>
           I am currently working as a research engineer at a medical artificial intelligence company
           (Lunit, if you are curious). Prior to this, I was a software engineer at an early stage
           startup, where I gained invaluable experience in building technology from ground up. While
           my main focus is on MLOps, my interests are broad, spanning user interfaces and
           experiences, backend, and computer science in general.
         </p>
-        <p className="leading-relaxed">
+        <p>
           Through this blog, I intend to share my insights and learnings from my past-time
           tinkerings, readings, and work. Occassionally, I dabble on topics in artificial
           intelligence. My recent research has centered on applying Bayesian methodologies to deep
           learning models, with a particular focus on language models. I am based in Seoul, South
-          Korea, where I live with my black cat, <i>Ggoggam</i> (꼬깜).
+          Korea, where I live with my black cat, <em>Ggoggam</em> (꼬깜).
         </p>
       </div>
-      <div className="flex flex-col items-center justify-center">
-        <Carousel className="w-full max-w-sm md:max-w-md">
-          <CarouselContent>
-            {imageFileNames.map((src, index) => (
-              <CarouselItem key={index}>
-                <div className="p-1">
-                  <Card>
-                    <CardContent className="flex aspect-square items-center justify-center p-6">
-                      <img
-                        src={src}
-                        alt="image of ggoggam"
-                        className="w-full h-full object-cover"
-                      />
-                    </CardContent>
-                  </Card>
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <div className="hidden lg:block">
-            <CarouselPrevious />
-            <CarouselNext />
-          </div>
-        </Carousel>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {imageFileNames.map((src, index) => (
+          <img
+            key={index}
+            src={src}
+            alt="image of ggoggam"
+            loading="lazy"
+            className="w-full aspect-square object-cover rounded"
+          />
+        ))}
       </div>
     </div>
   );
