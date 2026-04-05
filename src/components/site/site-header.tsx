@@ -2,29 +2,30 @@ import { Link, useRouterState } from "@tanstack/react-router";
 
 export default function SiteHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isBlog = pathname.includes("blog");
-  const blogTextColor = isBlog ? "text-gray-50" : "text-gray-950";
-  const tilTextColor = isBlog ? "text-gray-950" : "text-gray-50";
+
+  const linkClass = (path: string) => {
+    const active = path === "/" ? pathname === "/" : pathname.startsWith(path);
+    return active ? "text-gray-900 font-semibold" : "text-gray-400";
+  };
 
   return (
-    <nav className="container mx-auto px-4 py-4 text-2xl md:text-4xl lg:text-6xl xl:text-8xl leading-tight tracking-tighter">
-      <ul className="flex space-x-2 md:space-x-4">
-        <li>
-          <Link to="/" className="font-black text-gray-50">
-            TODAY I
+    <nav className="max-w-2xl w-full mx-auto px-6 pt-12 pb-4">
+      <div className="flex items-baseline gap-6">
+        <Link to="/" className="text-lg font-bold no-underline text-gray-900 hover:text-gray-900">
+          ggoggam
+        </Link>
+        <div className="flex gap-4 text-sm">
+          <Link to="/blog" className={`no-underline hover:text-gray-900 ${linkClass("/blog")}`}>
+            blog
           </Link>
-        </li>
-        <li>
-          <Link to="/til" className={`font-black ${tilTextColor} hover:text-gray-50`}>
-            LEARNED
+          <Link to="/til" className={`no-underline hover:text-gray-900 ${linkClass("/til")}`}>
+            til
           </Link>
-        </li>
-        <li>
-          <Link to="/blog" className={`font-black ${blogTextColor} hover:text-gray-50`}>
-            WROTE
+          <Link to="/about" className={`no-underline hover:text-gray-900 ${linkClass("/about")}`}>
+            about
           </Link>
-        </li>
-      </ul>
+        </div>
+      </div>
     </nav>
   );
 }
