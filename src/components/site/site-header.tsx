@@ -13,7 +13,7 @@ export default function SiteHeader() {
       <div className="flex items-center gap-6">
         <Link
           to="/"
-          className="text-lg font-black tracking-tight no-underline text-gray-900 hover:text-gray-900"
+          className="text-xl font-black tracking-tight no-underline text-gray-900 hover:text-gray-900"
         >
           꼬깜
         </Link>
