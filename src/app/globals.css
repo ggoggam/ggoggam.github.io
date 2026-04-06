@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,6 +10,7 @@
 }
 
 .prose pre > code {
+  font-family: "Geist Mono", monospace;
   background-color: rgb(30, 41, 59);
   border-radius: 0.5rem;
   padding: 0.75rem 0.25rem;
@@ -19,6 +22,7 @@
 }
 
 .prose code {
+  font-family: "Geist Mono", monospace;
   background-color: #f3f4f6;
   border-radius: 0.25rem;
   padding: 0.125rem 0.25em;

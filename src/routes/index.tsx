@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { getRecentPosts } from "@/lib/posts";
+import { AboutFragment } from "@/components/about-fragment";
 
 export const Route = createFileRoute("/")({
   loader: () => getRecentPosts(),
@@ -10,21 +10,24 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   const posts = Route.useLoaderData();
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-8">Recent</h1>
-      <ul className="space-y-4">
-        {posts.map((post) => (
-          <li
-            key={post.slug}
-            className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4"
-          >
-            <time className="text-sm text-gray-400 shrink-0 tabular-nums">{post.date}</time>
-            <Link to={post.url} className="hover:text-gray-600">
-              {post.title}
-            </Link>
-          </li>
-        ))}
-      </ul>
+    <div className="space-y-12">
+      <AboutFragment />
+      <div>
+        <h2 className="text-2xl font-bold mb-8">Recent</h2>
+        <ul className="space-y-4">
+          {posts.map((post) => (
+            <li
+              key={post.slug}
+              className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4"
+            >
+              <time className="text-sm text-gray-400 shrink-0 tabular-nums">{post.date}</time>
+              <Link to={post.url} className="hover:text-gray-600">
+                {post.title}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
