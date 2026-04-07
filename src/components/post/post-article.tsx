@@ -52,9 +52,9 @@ export default function PostArticle({
         category="General"
         categoryId="DIC_kwDOKvkuXc4Cjadh"
         mapping="pathname"
-        reactionsEnabled="1"
+        reactionsEnabled="0"
         emitMetadata="0"
-        theme="light_high_contrast"
+        theme="https://ggoggam.github.io/giscus-theme.css"
         loading="lazy"
       />
     </article>

@@ -49,7 +49,7 @@ export default defineConfig({
         ],
         rehypePlugins: [
           rehypeSlug,
-          [rehypePrettyCode, { keepBackground: false, theme: "one-dark-pro" }],
+          [rehypePrettyCode, { keepBackground: true, theme: "github-light" }],
           rehypeKatex,
         ],
       }),
