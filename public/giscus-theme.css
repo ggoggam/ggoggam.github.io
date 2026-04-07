@@ -1,0 +1,153 @@
+/*
+ * Custom Giscus theme — matches the blog's minimalist style.
+ * Overrides GitHub Primer CSS variables used inside the Giscus iframe.
+ */
+
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap");
+
+:root {
+  /* Canvas */
+  --color-canvas-default: #ffffff;
+  --color-canvas-subtle: #f9fafb;
+  --color-canvas-inset: #f3f4f6;
+  --color-canvas-overlay: #ffffff;
+
+  /* Foreground */
+  --color-fg-default: #111827;
+  --color-fg-muted: #6b7280;
+  --color-fg-subtle: #9ca3af;
+  --color-fg-on-emphasis: #ffffff;
+
+  /* Borders */
+  --color-border-default: #e5e7eb;
+  --color-border-muted: #f3f4f6;
+  --color-border-subtle: #f9fafb;
+
+  /* Accent (links, focus) */
+  --color-accent-fg: #374151;
+  --color-accent-emphasis: #111827;
+  --color-accent-muted: rgba(55, 65, 81, 0.1);
+  --color-accent-subtle: #f3f4f6;
+
+  /* Buttons — default */
+  --color-btn-text: #111827;
+  --color-btn-bg: #ffffff;
+  --color-btn-border: #d1d5db;
+  --color-btn-shadow: 0 0 transparent;
+  --color-btn-inset-shadow: 0 0 transparent;
+  --color-btn-hover-bg: #f9fafb;
+  --color-btn-hover-border: #9ca3af;
+  --color-btn-active-bg: #f3f4f6;
+  --color-btn-selected-bg: #f3f4f6;
+  --color-btn-focus-border: #111827;
+
+  /* Buttons — primary */
+  --color-btn-primary-text: #ffffff;
+  --color-btn-primary-bg: #111827;
+  --color-btn-primary-border: #111827;
+  --color-btn-primary-shadow: 0 0 transparent;
+  --color-btn-primary-inset-shadow: 0 0 transparent;
+  --color-btn-primary-hover-bg: #374151;
+  --color-btn-primary-hover-border: #374151;
+  --color-btn-primary-selected-bg: #374151;
+  --color-btn-primary-disabled-text: rgba(255, 255, 255, 0.5);
+  --color-btn-primary-disabled-bg: #9ca3af;
+  --color-btn-primary-disabled-border: #9ca3af;
+
+  /* Neutrals */
+  --color-neutral-muted: rgba(107, 114, 128, 0.1);
+  --color-neutral-emphasis: #6b7280;
+  --color-neutral-emphasis-plus: #374151;
+  --color-neutral-subtle: #f9fafb;
+
+  /* Header (sign-in banner, etc.) */
+  --color-header-bg: #f3f4f6;
+  --color-header-divider: #e5e7eb;
+  --color-header-logo: #111827;
+  --color-header-text: #374151;
+  --color-header-search-bg: #ffffff;
+  --color-header-search-border: #d1d5db;
+
+  /* Inputs */
+  --color-input-bg: #ffffff;
+  --color-input-contrast-bg: #ffffff;
+  --color-input-disabled-bg: #f3f4f6;
+  --color-input-border: #d1d5db;
+  --color-input-shadow: 0 0 transparent;
+
+  /* Reaction colors (subtle tints of the blog's gray palette) */
+  --color-scale-blue-2: #dbeafe;
+  --color-scale-blue-5: #6b7280;
+
+  /* Timeline / activity */
+  --color-timeline-badge-bg: #f3f4f6;
+}
+
+/* Typography */
+body,
+.gsc-comment-box-write,
+.gsc-comment-content,
+.gsc-reply-box,
+input,
+textarea,
+button {
+  font-family:
+    "Pretendard Variable",
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif !important;
+}
+
+code,
+pre,
+.gsc-comment-box-preview code,
+.gsc-comment-content code {
+  font-family: "Geist Mono", ui-monospace, monospace !important;
+  font-size: 0.875em;
+  background-color: #f3f4f6;
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.25em;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+/* Links */
+a {
+  color: #374151;
+  text-underline-offset: 2px;
+  text-decoration-color: #d1d5db;
+}
+
+a:hover {
+  text-decoration-color: #111827;
+}
+
+/* Reaction buttons: match border-radius and muted style */
+.gsc-emoji-button {
+  border-radius: 9999px !important;
+}
+
+/* Comment cards: flat, no heavy shadows */
+.gsc-comment,
+.gsc-reply {
+  border-color: #e5e7eb !important;
+  box-shadow: none !important;
+}
+
+/* Author label */
+.gsc-comment-author-association {
+  background-color: #f3f4f6 !important;
+  border-color: #e5e7eb !important;
+  color: #6b7280 !important;
+}
+
+/* Upvote button */
+.gsc-upvote-button {
+  border-radius: 9999px !important;
+}
