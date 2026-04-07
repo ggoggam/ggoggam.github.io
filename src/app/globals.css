@@ -53,8 +53,24 @@
   border-radius: 9999px;
 }
 
+.prose pre > code {
+  counter-reset: line;
+}
+
 .prose pre span[data-line] {
-  @apply inline-block px-4 py-0.5 leading-snug;
+  @apply inline-block pr-4 pl-0 py-0.5 leading-snug;
+  counter-increment: line;
+}
+
+.prose pre span[data-line]::before {
+  content: counter(line);
+  display: inline-block;
+  width: 1.5rem;
+  margin-right: 0.75rem;
+  text-align: right;
+  color: rgba(0, 0, 0, 0.25);
+  user-select: none;
+  font-size: 0.8em;
 }
 
 @layer base {

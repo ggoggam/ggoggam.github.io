@@ -66,18 +66,31 @@ export const mdxComponents: MDXComponents = {
       {id && <CopyLinkButton id={id} />}
     </h1>
   ),
-  h2: ({ id, children, ...props }) => (
-    <h2 id={id} className="text-xl font-bold mt-8 mb-3" {...props}>
-      {id ? (
-        <a href={`#${id}`} className="hover:underline">
-          {children}
-        </a>
-      ) : (
-        children
-      )}
-      {id && <CopyLinkButton id={id} />}
-    </h2>
-  ),
+  h2: ({ id, children, ...props }) => {
+    if (id === "footnote-label") {
+      const { className: _, ...rest } = props;
+      return (
+        <h2 id={id} className="text-lg font-bold my-4" {...rest}>
+          <a href={`#${id}`} className="hover:underline">
+            {children}
+          </a>
+          <CopyLinkButton id={id} />
+        </h2>
+      );
+    }
+    return (
+      <h2 id={id} className="text-xl font-bold my-4" {...props}>
+        {id ? (
+          <a href={`#${id}`} className="hover:underline">
+            {children}
+          </a>
+        ) : (
+          children
+        )}
+        {id && <CopyLinkButton id={id} />}
+      </h2>
+    );
+  },
   h3: ({ id, children, ...props }) => (
     <h3 id={id} className="text-lg font-bold mt-6 mb-2" {...props}>
       {id ? (
@@ -135,7 +148,6 @@ export const mdxComponents: MDXComponents = {
       return (
         <section {...props}>
           <hr className="border-gray-200" />
-          <h3 className="text-lg font-bold my-4">Footnotes</h3>
           {children}
         </section>
       );
