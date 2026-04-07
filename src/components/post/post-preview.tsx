@@ -23,7 +23,7 @@ export default function PostPreview({
     <li key={slug} className="flex flex-col gap-1">
       <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4">
         <time className="text-sm text-gray-400 shrink-0 tabular-nums">{date}</time>
-        <div className="flex items-baseline justify-between gap-4 min-w-0 flex-1">
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4 min-w-0 flex-1">
           <Link to={url} className="hover:text-gray-600 min-w-0">
             {title}
           </Link>
