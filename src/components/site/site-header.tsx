@@ -5,7 +5,7 @@ export default function SiteHeader() {
 
   const linkClass = (path: string) => {
     const active = path === "/" ? pathname === "/" : pathname.startsWith(path);
-    return active ? "text-gray-900 font-semibold" : "text-gray-400";
+    return active ? "text-gray-900" : "text-gray-400";
   };
 
   return (
@@ -17,7 +17,7 @@ export default function SiteHeader() {
         >
           꼬깜
         </Link>
-        <div className="flex gap-4 text-sm">
+        <div className="flex gap-4 text-sm font-semibold">
           <Link to="/blog" className={`no-underline hover:text-gray-900 ${linkClass("/blog")}`}>
             blog
           </Link>
