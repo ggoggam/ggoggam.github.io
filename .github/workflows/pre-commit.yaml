@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  check:
+  pre-commit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/create-github-app-token@v2
