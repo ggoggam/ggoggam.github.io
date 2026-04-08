@@ -123,7 +123,13 @@ export const mdxComponents: MDXComponents = {
     );
   },
   img: ({ src, alt, ...props }) => (
-    <img src={src} alt={alt || ""} loading="lazy" className="my-4 max-w-full rounded" {...props} />
+    <img
+      src={src}
+      alt={alt || ""}
+      loading="lazy"
+      className="my-4 max-w-full rounded-md"
+      {...props}
+    />
   ),
   blockquote: (props) => (
     <blockquote className="border-l-2 border-gray-200 pl-4 italic my-4 text-gray-600" {...props} />

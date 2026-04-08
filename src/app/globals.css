@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+img {
+  box-shadow:
+    0 4px 16px 0 rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
 .prose section {
   padding-top: 1rem;
   padding-bottom: 1rem;
