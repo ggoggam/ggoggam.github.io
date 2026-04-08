@@ -83,6 +83,9 @@ img {
   * {
     @apply border-gray-200;
   }
+  html {
+    scrollbar-gutter: stable;
+  }
   body {
     @apply bg-white text-gray-900;
     font-family: "Pretendard Variable", Pretendard, sans-serif;
