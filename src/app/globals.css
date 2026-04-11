@@ -16,7 +16,6 @@ img {
 }
 
 .prose pre > code {
-  font-family: "Geist Mono", monospace;
   border-radius: 0.5rem;
   padding: 0.75rem 0.25rem;
   overflow-x: auto;
@@ -35,7 +34,6 @@ img {
 }
 
 .prose code {
-  font-family: "Geist Mono", monospace;
   border-radius: 0.25rem;
   padding: 0.125rem 0.25em;
 }
