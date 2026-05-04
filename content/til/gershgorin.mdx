@@ -1,0 +1,39 @@
+---
+title: Gershgorin Circle Theorem
+excerpt: One of my favorite theorems in linear algebra
+date: 2025-02-13
+published: true
+tags:
+  - Math
+---
+
+import { GershgorinCanvas } from "@/components/gershgorin-canvas";
+
+Gershgorin Circle Theorem is a pretty neat theorem in linear algebra that provides a simple yet powerful way to bound the eigenvalues of a square matrix.
+I was first introduced to this during college, and it has been one of my favorite theorems since then.
+Today I was reminded of this theorem.
+
+### Theorem
+
+Define Gershgorin circle in a complex plane to be a closed disk centered at $a_{ii}$ with radius $R_i = \sum_{j \neq i} | a_{ij} |$, where $a_{ij}$ are the elements of a complex square matrix $A$.
+Then every eigenvalue of a square complex matrix $A$ lies within the union (or equivalently at least one) of the Gershgorin circles.
+
+### Proof
+
+Let $\lambda$ be an eigenvalue of $A$ and $\mathbf{x}$ be the corresponding eigenvector.
+Find $i$ such that $i = \arg \max_{k} | x_k |$.
+Then we have $\sum_{j \neq i} a_{ij} x_j = (\lambda - a_{ii}) x_i$ from the definition of eigenvalue.
+We can apply triangle inequality and let $| x_j | / |x_i| \leq 1$ to get
+
+$$
+|\lambda - a_{ii}| = \left| \sum_{j \neq i} \frac{a_{ij} x_j}{x_i} \right| \leq \sum_{j \neq i} \left| a_{ij} \right| \frac{\left| x_j \right|}{\left| x_i \right|} \leq \sum_{j \neq i} \left| a_{ij} \right|.
+$$
+
+### Visualization
+
+You may input array of array of numbers.
+Since computing eigenvalues for different values are not trivial, I will not be showing the eigen values here.
+
+However, this is where the power of the theorem lies; you do not have to compute the actual eigen value to know its approximate location in the complex plane!
+
+<GershgorinCanvas />

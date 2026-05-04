@@ -1,0 +1,94 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+img {
+  box-shadow:
+    0 4px 16px 0 rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.prose section {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.prose pre > code {
+  border-radius: 0.5rem;
+  padding: 0.75rem 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  display: grid;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose pre {
+  border-radius: 0.5rem;
+  box-shadow:
+    0 1px 4px 0 rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.prose code {
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.25em;
+}
+
+.prose :not(pre) > code {
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.prose pre > code::-webkit-scrollbar {
+  height: 4px;
+}
+
+.prose pre > code::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.prose pre > code::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+}
+
+.prose pre > code {
+  counter-reset: line;
+}
+
+.prose pre span[data-line] {
+  @apply inline-block pr-4 pl-0 py-0.5 leading-snug;
+  counter-increment: line;
+}
+
+.prose pre span[data-line]::before {
+  content: counter(line);
+  display: inline-block;
+  width: 1.5rem;
+  margin-right: 0.75rem;
+  text-align: right;
+  color: rgba(0, 0, 0, 0.25);
+  user-select: none;
+  font-size: 0.8em;
+}
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+  html {
+    scrollbar-gutter: stable;
+  }
+  body {
+    @apply bg-white text-gray-900;
+    font-family: "Pretendard Variable", Pretendard, sans-serif;
+  }
+  a {
+    @apply underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900 transition-colors;
+  }
+}

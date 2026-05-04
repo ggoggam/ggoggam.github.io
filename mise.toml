@@ -1,0 +1,12 @@
+[tools]
+bun = "latest"
+prek = "latest"
+
+[tasks.install]
+description = "Install frontend dependencies"
+run = "bun install --frozen-lockfile"
+
+[tasks."pre-commit"]
+description = "Run pre-commit checks via prek"
+depends = ["install"]
+run = "prek run --show-diff-on-failure --color=always --all-files --hook-stage=manual"
