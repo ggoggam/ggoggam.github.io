@@ -1,0 +1,197 @@
+---
+title: Personal Monorepo and Agentic Engineering
+excerpt: Consolidating projects for humans and AI agents alike
+author: ggoggam
+date: 2026-05-11
+published: true
+tags:
+  - Monorepo
+---
+
+I recently consolidated all of my personal projects into a single monorepo.
+What started as an attempt to simplify maintenance across scattered repositories turned into something more interesting — a workspace that is not only easier for me to manage, but also significantly more useful for AI coding agents.
+
+## Motivation
+
+Like many developers, I had accumulated a handful of personal projects over time, each living in its own GitHub repository: a Tauri desktop app, a Compose Multiplatform mobile app, a Rust CLI tool, this blog, and a few others.
+The overhead of context-switching between them was manageable, but the CI boilerplate was not.
+Each repo had its own workflow files, its own linting setup, and its own set of tools to install.
+Updating a shared pattern (say, switching from a custom pre-commit runner to a centralized one) meant touching every repository individually.
+
+The final push came from working with AI coding agents like Claude Code.
+When I asked an agent to help me with a feature that touched patterns shared across projects, it could only see the repository it was currently in.
+It had no idea that I had already solved the same problem differently in another project, or that two projects shared a common interface that needed to stay in sync.
+The agent was context-blind in the same way I was whenever I had too many repos open in separate editor windows.
+
+## Multi-project vs multi-module
+
+Not all monorepos are the same.
+There is an important distinction between a **multi-module** monorepo and a **multi-project** monorepo, and the choice between them has significant implications for tooling and workflow.
+
+A multi-module monorepo is what you typically see at larger organizations.
+All code lives in one repository, and projects within it share dependencies, build targets, and often a common language or framework.
+This is the model that tools like Bazel[^3] and Pants[^4] are designed for — they provide hermetic builds, fine-grained caching, and dependency graph analysis across the entire repository.
+The build system understands the relationship between modules and can determine exactly what needs to be rebuilt when a file changes.
+Because the build graph is explicit, these tools can do incremental builds and test only what is affected by a change — which can dramatically reduce CI times in large codebases where a full build-and-test cycle would otherwise take hours.
+
+A multi-project monorepo, on the other hand, is a collection of independent projects that happen to live in the same repository.
+The projects may use entirely different languages and toolchains — Rust here, Kotlin there, TypeScript over there — and have no shared build artifacts or dependency resolution between them.
+They coexist for organizational convenience, not because they are architecturally coupled.
+
+I have used Bazel and Pants professionally, and they are excellent at what they do.
+The incremental build and test capabilities alone justify the investment at scale — being able to push a change and have CI finish in minutes instead of running every test suite end-to-end is a massive productivity win.
+But they come with real costs: a non-trivial learning curve, BUILD file maintenance, and infrastructure to support remote caching and execution.
+For a large engineering organization where dozens of teams contribute to interdependent modules, that investment pays for itself many times over.
+For a personal workspace with a handful of unrelated projects written in different languages, it is overkill.
+
+My workspace is firmly in the multi-project camp.
+A Tauri desktop app in Rust, a Compose Multiplatform app in Kotlin, a Next.js web app, a Rust CLI tool, and this blog have no shared build graph.
+What they share is an owner (me), a CI pipeline, and the benefit of being visible to each other.
+For this, I did not need a sophisticated build system — I needed a simple way to keep projects in one place while letting each one use its own native toolchain.
+That led me to `git subtree` and `mise`, which together provide the organizational benefits of a monorepo without imposing a unified build model.
+
+## Setup with git subtree
+
+I chose `git subtree` over `git submodule` for the monorepo structure.
+Submodules store a pointer to a specific commit in a separate repository, which means you still need to manage two git histories and remember to update the pointer.
+Subtrees, on the other hand, copy the project's files directly into the monorepo.
+The result is a single, flat repository where every project is just a directory.
+
+```sh
+# Initial import of a project
+git subtree add --prefix=chippy chippy main --squash
+
+# Pull upstream changes
+git subtree pull --prefix=chippy chippy main --squash
+
+# Push monorepo changes back to upstream
+git subtree push --prefix=chippy chippy main
+```
+
+Each project retains its own upstream repository.
+The `--squash` flag collapses the upstream history into a single merge commit, keeping the monorepo log readable.
+
+## CI with dynamic project matrices
+
+The trickiest part of a monorepo CI is avoiding redundant work.
+You don't want to lint your Rust project every time you push a change to your blog.
+I solved this with a reusable GitHub Action that builds a dynamic job matrix based on which files actually changed.
+
+Projects are declared in a central catalog (`projects.json`) that maps each project to its directory, upstream repo, lockfile, and which CI modes it participates in:
+
+```json
+{
+  "project": "chippy",
+  "path": "chippy",
+  "repo": "chippy",
+  "lockfile": "chippy/Cargo.lock",
+  "modes": ["pre-commit", "mirror"],
+  "cachePaths": {
+    "pre-commit": ["~/.cargo/registry", "chippy/src-tauri/target"]
+  }
+}
+```
+
+The `project-matrix` action diffs the changed files against each project's path prefix and emits a JSON matrix containing only the affected projects.
+Downstream jobs consume this matrix with `strategy.matrix.include`, so only the relevant projects get linted, tested, or mirrored on any given push.
+
+## Mirroring back to upstream
+
+Since many of the projects are public, they still need to exist as standalone repositories on GitHub.
+A mirror workflow runs on every push to `main` and uses `git subtree push` to sync each changed project back to its upstream repo.
+From the outside, each project's repository looks like a normal, independently maintained repo — the monorepo is an implementation detail.
+
+## mise as the glue
+
+One of the underappreciated benefits of a monorepo is that it can serve as a single entry point for setting up your entire development environment.
+I use mise[^1] to manage per-project toolchains and define common tasks, and the monorepo structure makes this particularly powerful.
+
+Each project declares its own toolchain requirements in a local `mise.toml`.
+For example, `chippy` (a Tauri desktop app) needs Rust and Bun, while `airoute` (a Compose Multiplatform app) needs JDK 21 and ktlint:
+
+```toml
+# chippy/mise.toml
+[tools]
+bun = "latest"
+rust = "latest"
+
+# **/mise.toml
+[tools]
+java = "temurin-21"
+ktlint = "latest"
+```
+
+The root `mise.toml` ties everything together with `experimental_monorepo_root`, which tells mise to discover and respect each subdirectory's configuration:
+
+```toml
+experimental_monorepo_root = true
+
+[monorepo]
+config_roots = ["chippy", "shadcn-treeview", ...]
+```
+
+When I `cd` into any project directory, mise automatically activates the right toolchain — the correct Rust version, the correct JDK, the correct package manager.
+The root config also defines monorepo-wide tasks for subtree operations (`mise run pull`, `mise run push`), while each project defines its own `dev`, `test`, and `lint` tasks.
+
+Interestingly, the experimental monorepo feature also supports Bazel-like task invocation with `//project:task` syntax.
+From the workspace root, I can run any project's task without changing directories:
+
+```sh
+mise run //chippy:lint
+```
+
+This even works for composing cross-project tasks in the root config:
+
+```toml
+[tasks."check:all"]
+depends = ["//chippy:check"]
+```
+
+It is a small touch, but it brings some of the ergonomics of a proper build system to what is otherwise just a directory of independent projects.
+
+The practical result is that regardless of which machine I am working on, cloning the monorepo and running `mise install` gives me a fully working development environment for every project.
+There is no "check the README for setup instructions" dance, no project-specific installation scripts to discover and run.
+A single repository, a single tool, and everything is ready.
+This has been especially valuable when switching between machines — the monorepo is the only thing I need to clone, and mise ensures the environment is identical everywhere.
+
+## The case for agentic engineering
+
+This is where the monorepo setup becomes most compelling, at least for me.
+
+AI coding agents operate within the context they are given.
+When you point an agent at a single repository, it can only reason about the code in that repository.
+This is fine for isolated tasks, but software is rarely isolated.
+A desktop app might share authentication logic with a mobile app.
+A CLI tool might consume the same API that a web frontend does.
+A blog post might reference patterns from your actual projects.
+
+In a monorepo, the agent has visibility across all of these.
+When I ask Claude Code to implement a feature in one project, it can grep across the entire workspace, find how I approached a similar problem in another project, and maintain consistency without me having to manually provide context.
+This is not hypothetical — this post itself was written with the help of an agent that could read both the blog's content structure and the monorepo's CI configuration to produce accurate descriptions of the setup.
+
+More broadly, I think monorepos are a natural fit for the emerging pattern of agentic engineering.
+As coding agents become more capable, the bottleneck shifts from "can the agent write correct code" to "does the agent have enough context to make good decisions."
+A monorepo is a simple, zero-infrastructure way to maximize that context.
+There are no additional tools to configure, no cross-repo search indices to maintain — the agent just reads the filesystem, and the filesystem contains everything.
+
+This is analogous to how monorepos benefit human engineers at companies like Google[^2].
+The argument has always been that a single repository reduces coordination overhead and enables large-scale refactoring.
+For AI agents, the benefit is even more pronounced: they don't get fatigued by large codebases, and the more code they can see, the better their suggestions become.
+
+## Tradeoffs
+
+It is not all rosy.
+The git history becomes noisy with subtree merge commits, and `git log` for a specific project requires `-- <path>` filtering.
+CI configuration is more complex upfront — the dynamic matrix approach took a few iterations to get right.
+And if you are working with collaborators on individual projects, they will still interact with the upstream repo, so you need to be diligent about syncing.
+
+For a personal workspace, though, these tradeoffs are minor.
+The reduced maintenance burden, unified CI, and improved agent context have made the consolidation well worth it.
+
+[^1]: [mise](https://mise.jdx.dev/) is a polyglot runtime manager and task runner.
+
+[^2]: Rachel Potvin, Josh Levenberg. "Why Google Stores Billions of Lines of Code in a Single Repository." Communications of the ACM, 2016.
+
+[^3]: [Bazel](https://bazel.build/) is a build system developed by Google, designed for large-scale, multi-language monorepos with hermetic builds and remote caching.
+
+[^4]: [Pants](https://www.pantsbuild.org/) is a build system with similar goals to Bazel, with a focus on ergonomics and Python/JVM ecosystems.
