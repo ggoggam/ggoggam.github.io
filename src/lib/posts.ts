@@ -48,3 +48,11 @@ export function getRecentPosts(): PostMeta[] {
     .sort((a, b) => (a.date < b.date ? 1 : -1))
     .slice(0, 6);
 }
+
+export function hasRecentPost(type: "blog" | "til"): boolean {
+  const posts = type === "blog" ? getBlogPosts() : getTILPosts();
+  if (posts.length === 0) return false;
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  return new Date(posts[0].date) >= oneMonthAgo;
+}

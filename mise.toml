@@ -6,6 +6,11 @@ prek = "latest"
 description = "Install frontend dependencies"
 run = "bun install --frozen-lockfile"
 
+[tasks.dev]
+description = "Start the dev server"
+depends = ["install"]
+run = "bun run dev"
+
 [tasks."pre-commit"]
 description = "Run pre-commit checks via prek"
 depends = ["install"]
