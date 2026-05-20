@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { getRecentPosts } from "@/lib/posts";
 import { AboutFragment } from "@/components/about-fragment";
 import { SchotterCanvas } from "@/components/schotter-canvas";
+import { useSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/")({
   loader: () => getRecentPosts(),
@@ -10,6 +11,9 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const posts = Route.useLoaderData();
+  useSeo({
+    description: "A blog about software engineering, machine learning, and more.",
+  });
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-2">

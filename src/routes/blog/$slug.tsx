@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import PostArticle from "@/components/post/post-article";
 import { format } from "date-fns";
+import { useSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/blog/$slug")({
   loader: async ({ params }) => {
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/blog/$slug")({
     return {
       title: fm.title as string,
       date: format(new Date(fm.date), "yyyy-MM-dd"),
+      excerpt: (fm.excerpt as string) ?? "",
       tags: (fm.tags as string[]) ?? [],
       Component: mod.default as React.ComponentType<any>,
     };
@@ -22,8 +24,14 @@ export const Route = createFileRoute("/blog/$slug")({
 });
 
 function BlogPostPage() {
-  const { Component, title, date, tags } = Route.useLoaderData();
+  const { Component, title, date, tags, excerpt } = Route.useLoaderData();
   const { slug } = Route.useParams();
+  useSeo({
+    title,
+    description: excerpt,
+    path: `/blog/${slug}`,
+    type: "article",
+  });
   return (
     <PostArticle
       slug={slug}

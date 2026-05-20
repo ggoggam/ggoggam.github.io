@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getImages } from "@/lib/images";
 import { AboutFragment } from "@/components/about-fragment";
+import { useSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
@@ -8,6 +9,11 @@ export const Route = createFileRoute("/about")({
 
 function AboutPage() {
   const imageFileNames = getImages();
+  useSeo({
+    title: "About",
+    description: "About 꼬깜 — software engineer and cat enthusiast.",
+    path: "/about",
+  });
   return (
     <div className="space-y-8">
       <AboutFragment />

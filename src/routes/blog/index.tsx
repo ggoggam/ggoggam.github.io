@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import PostList from "@/components/post/post-list";
 import { getBlogPosts } from "@/lib/posts";
+import { useSeo } from "@/lib/seo";
 
 type BlogSearch = {
   tag?: string;
@@ -18,6 +19,11 @@ function BlogPage() {
   const posts = Route.useLoaderData();
   const { tag } = Route.useSearch();
   const navigate = useNavigate();
+  useSeo({
+    title: "Blog",
+    description: "Blog posts about software engineering, machine learning, and more.",
+    path: "/blog",
+  });
 
   return (
     <PostList
