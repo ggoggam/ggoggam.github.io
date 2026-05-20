@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import yaml from "yaml";
 
-const SITE_URL = "https://ggoggam.github.io";
+const SITE_URL = "https://blog.ggoggam.dev";
 const SITE_NAME = "꼬깜";
 const DIST = "dist";
 

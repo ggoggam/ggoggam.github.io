@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 const SITE_NAME = "꼬깜";
-const SITE_URL = "https://ggoggam.github.io";
+const SITE_URL = "https://blog.ggoggam.dev";
 
 type SeoProps = {
   title?: string;

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ggoggam.github.io/sitemap.xml
+Sitemap: https://blog.ggoggam.dev/sitemap.xml
