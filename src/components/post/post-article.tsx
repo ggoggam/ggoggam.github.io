@@ -54,7 +54,7 @@ export default function PostArticle({
         mapping="pathname"
         reactionsEnabled="0"
         emitMetadata="0"
-        theme="https://ggoggam.github.io/giscus-theme.css"
+        theme="https://blog.ggoggam.dev/giscus-theme.css"
         loading="lazy"
       />
     </article>

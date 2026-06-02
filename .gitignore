@@ -23,6 +23,7 @@
 # vite
 dist/
 .vite/
+.ssr-build/
 
 # misc
 .DS_Store

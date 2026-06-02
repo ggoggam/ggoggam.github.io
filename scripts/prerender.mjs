@@ -1,11 +1,16 @@
 /* global console */
 import fs from "fs";
 import path from "path";
+import { pathToFileURL } from "url";
 import yaml from "yaml";
 
 const SITE_URL = "https://blog.ggoggam.dev";
 const SITE_NAME = "꼬깜";
 const DIST = "dist";
+const SSR_ENTRY = path.resolve(".ssr-build/entry-server.js");
+
+// SSR bundle built by `vite build --ssr src/entry-server.tsx --outDir .ssr-build`.
+const { render } = await import(pathToFileURL(SSR_ENTRY).href);
 
 function escapeAttr(str) {
   return str
@@ -17,7 +22,7 @@ function escapeAttr(str) {
 
 const template = fs.readFileSync(path.join(DIST, "index.html"), "utf-8");
 
-function createPage(routePath, { title, description, type = "website" }) {
+async function createPage(routePath, { title, description, type = "website" }) {
   const fullTitle = routePath === "/" ? SITE_NAME : `${title} | ${SITE_NAME}`;
   const url = `${SITE_URL}${routePath}`;
 
@@ -31,9 +36,13 @@ function createPage(routePath, { title, description, type = "website" }) {
     `<link rel="canonical" href="${url}" />`,
   ].join("\n    ");
 
+  // Server-render the route's body so crawlers and no-JS clients get real content.
+  const appHtml = await render(routePath);
+
   const html = template
     .replace(/<title>.*?<\/title>/, `<title>${escapeAttr(fullTitle)}</title>`)
-    .replace("</head>", `    ${metaTags}\n  </head>`);
+    .replace("</head>", `    ${metaTags}\n  </head>`)
+    .replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`);
 
   const outputDir = routePath === "/" ? DIST : path.join(DIST, routePath);
   fs.mkdirSync(outputDir, { recursive: true });
@@ -71,33 +80,33 @@ function formatDate(date) {
 
 // --- Generate static pages ---
 
-console.log("Generating static pages...");
+console.log("Prerendering static pages...");
 
 const blogPosts = getPosts("blog");
 const tilPosts = getPosts("til");
 
-createPage("/", {
+await createPage("/", {
   title: SITE_NAME,
   description: "A blog about software engineering, machine learning, and more.",
 });
 
-createPage("/about", {
+await createPage("/about", {
   title: "About",
   description: "About 꼬깜 — software engineer and cat enthusiast.",
 });
 
-createPage("/blog", {
+await createPage("/blog", {
   title: "Blog",
   description: "Blog posts about software engineering, machine learning, and more.",
 });
 
-createPage("/til", {
+await createPage("/til", {
   title: "TIL",
   description: "Today I Learned — short notes and discoveries.",
 });
 
 for (const post of blogPosts) {
-  createPage(`/blog/${post.slug}`, {
+  await createPage(`/blog/${post.slug}`, {
     title: post.title,
     description: post.excerpt,
     type: "article",
@@ -105,7 +114,7 @@ for (const post of blogPosts) {
 }
 
 for (const post of tilPosts) {
-  createPage(`/til/${post.slug}`, {
+  await createPage(`/til/${post.slug}`, {
     title: post.title,
     description: post.excerpt,
     type: "article",
@@ -155,4 +164,4 @@ ${urls
 fs.writeFileSync(path.join(DIST, "sitemap.xml"), sitemap);
 console.log("  sitemap.xml");
 
-console.log(`Done. ${urls.length} pages + sitemap generated.`);
+console.log(`Done. ${urls.length} pages prerendered + sitemap generated.`);
