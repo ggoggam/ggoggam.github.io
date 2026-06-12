@@ -1,0 +1,150 @@
+---
+title: Self-Hosted CI on Railway (and a MacBook Air)
+excerpt: Moving GitHub Actions off hosted runners and GitHub's cache for near-free CI
+author: ggoggam
+date: 2026-06-12
+published: true
+tags:
+  - CI/CD
+  - Monorepo
+---
+
+In a [previous post](/blog/monorepo), I wrote about consolidating my personal projects into a single monorepo with one CI pipeline.
+That pipeline turned out to be a victim of its own success: with every project's lint, test, and release jobs running on GitHub-hosted runners, I started burning through the free Actions minutes well before the end of the month.
+The worst offender was the iOS release job — macOS runners consume minutes at a 10x multiplier[^1], so a single 30-minute TestFlight build costs the equivalent of five hours of Linux time.
+
+So I moved CI off GitHub's runners entirely: Linux jobs to a self-hosted runner on Railway, and iOS release builds to the MacBook Air sitting on my desk.
+Along the way I also moved multi-gigabyte build caches out of GitHub's cache backend and into a Railway storage bucket, for reasons that only became obvious once the first egress bill arrived.
+This post is about what that migration actually took — which was considerably more than changing `runs-on`.
+
+## Why Railway
+
+I was already running the backend for one of my apps on Railway, so it was the natural place to put a runner.
+Railway has an official guide and template for self-hosted GitHub Actions runners[^2]: a container service running GitHub's runner agent in ephemeral mode, paired with an autoscaler that listens for `workflow_job` webhooks and scales replicas up for concurrent jobs.
+Ephemeral runners exit after each job and re-register fresh, so there is no state leaking between runs — a property that sounds purely virtuous until it starts breaking your caches, which we will get to.
+
+The pricing model is the appealing part.
+Instead of paying per minute of CI, you pay for the compute the runner service actually uses, and an idle ephemeral runner costs close to nothing.
+For bursty personal-project CI — long stretches of nothing punctuated by a flurry of pushes — this is a much better fit than per-minute billing.
+
+## Routing jobs with a repo variable
+
+I did not want to commit to self-hosted runners irreversibly.
+GitHub-hosted runners are still better in one important way: the images come preloaded with toolchains, and when a job misbehaves it is GitHub's machine, not my infrastructure.
+So the workflows route Linux jobs through a repository variable instead of hard-coding the runner:
+
+```yaml
+jobs:
+  test:
+    runs-on: ${{ matrix.runner || vars.LINUX_RUNNER || 'ubuntu-latest' }}
+```
+
+When hosted minutes run low, `gh variable set LINUX_RUNNER --body railway` flips every Linux job in the repo to the Railway runner; deleting the variable flips them back.
+A per-project `runner` override in the project catalog (`projects.json` from the previous post) remains as an escape hatch for projects that genuinely need the hosted image.
+
+The iOS release job is the exception: it pins `runs-on: [self-hosted, macOS, ARM64]` with no hosted fallback.
+If the Mac is offline, the job queues until I open the lid.
+For a personal app release cadence, that is an acceptable failure mode in exchange for never paying the 10x macOS multiplier again.
+
+## Self-hosted is not hosted: the long tail
+
+Changing `runs-on` was the easy part.
+GitHub's `ubuntu-latest` image ships with something like 60GB of preinstalled toolchains — Node, JDKs, Ruby, the Android SDK, OpenSSL headers, a Docker daemon.
+A fresh Railway container has none of that, and a surprising number of popular actions silently assume they are running on GitHub's image.
+What followed was a week of fixing environment gaps, each one a small lesson in how much the hosted images were doing for me.
+
+### Tools: mise instead of setup-\* actions
+
+The first casualties were the `setup-*` actions.
+`ruby/setup-ruby` only ships prebuilt rubies for GitHub-hosted images — it hard-codes paths like `/Users/runner` and fails with `EACCES` anywhere else.
+Rather than chase per-tool workarounds, I leaned on mise[^3], which was already managing toolchains for the monorepo, and split its configuration into three tiers:
+
+- **`mise.toml`** (root, committed): tools every project shares — bun, rust, ktlint, the pre-commit runner.
+- **`mise.ci.toml`** (root, committed): tools that only CI runners lack — the JDK, ruby, node. Loaded only when `MISE_ENV=ci`, so local machines (which have these anyway) and Railway's Railpack builder (which reads `mise.toml` to build the server image) never install them.
+- **`mise.local.toml`** (gitignored): local-only conveniences like the Railway CLI and cloudflared, kept out of CI entirely.
+
+That last tier exists because of a fun footgun: mise loads `*.local.toml` unconditionally, so committing one would drag local tooling into every CI run.
+And the middle tier exists because of an even better one — pinning ruby in the server project's `mise.toml` caused Railway's image builder to compile ruby from source on every deploy, and fail, because its Debian base image lacks libyaml.
+The server never needed ruby; it was only there for the Actions runner.
+Separating the environments fixed both directions.
+
+Everything is locked: `mise.lock` and `mise.ci.lock` at the root pin exact versions and platform URLs for both `linux-x64` and `macos-arm64`, so every job on every runner resolves the identical toolset, and tool caches key on the lockfile hash instead of going stale behind `latest` pins.
+
+### Caches that lie about being portable
+
+Self-hosted runners broke my caches in two ways I did not anticipate.
+
+First, cargo target directories embed absolute paths.
+Tauri's build script records where its generated permission files live, and every ephemeral Railway job runs under a fresh random work directory (`/_work/github-runner-<id>/...`).
+A `target/` cache restored into a different work dir fails the build with `failed to read plugin permissions: failed to read file <previous run's path>`.
+The fix is to stop pretending the cache is portable: on self-hosted runners, restored target dirs are deleted before building, and only the path-independent caches (`~/.cargo/registry`, `~/.cargo/git`) carry over.
+
+Second, caches link against system libraries.
+When Railway upgraded the runner image from Ubuntu focal to noble, a cargo cache built against OpenSSL 1.1 was restored onto a system with OpenSSL 3, and linking failed because `SSL_get_peer_certificate` no longer exists.
+Cache keys now include the OS release (`$ID$VERSION_ID` from `/etc/os-release`) and `runner.environment`, so artifacts never cross a runner image boundary they were not built for.
+
+### Containers are smaller than dev machines
+
+The Android release worked on hosted runners and OOM-died on Railway: `gradle.properties` sized the JVMs for development machines (`-Xmx4096M` Gradle plus a 3GB Kotlin daemon), and the container killed the daemon mid-`mergeDexRelease` with the wonderfully vague "Gradle build daemon disappeared unexpectedly."
+Gradle reads properties from `GRADLE_USER_HOME` with higher precedence than the project's, so the workflow caps heaps and worker count there — on self-hosted runners only, leaving local builds untouched.
+
+## The Mac: keychains, SIGPIPE, and a 3-hour tar
+
+The iOS job got its own category of problems, because a personal MacBook Air is even less like a hosted runner than a Railway container is.
+
+The headline failure was code signing.
+Xcode cloud signing against the Mac's login keychain fails with `errSecInternalComponent`: the runner executes in a headless launchd session, and the login keychain's key ACLs expect a GUI permission prompt that can never appear.
+fastlane's `setup_ci` solves exactly this on hosted runners by creating a temporary keychain — but it makes that keychain the machine's _default_ and never restores it, which is destructive on a computer I actually use.
+So the release action does the same dance with manners: create a temp keychain, make it the **only** user keychain in the search list (if the login keychain stays visible, Xcode helpfully picks the existing development identity from it and hits the same ACL wall), let `-allowProvisioningUpdates` provision a fresh signing cert into it, and then an `always()` cleanup step restores the login keychain and deletes the temp one — win, fail, or cancel.
+
+Two smaller ones, for the search engines:
+
+- `xcodebuild -version | head -1` crashes xcodebuild with `NSFileHandleOperationException`. `head` closes the pipe after one line and xcodebuild aborts on the resulting SIGPIPE. Use `awk 'NR==1'`, which reads the full stream.
+- The hosted-runner habit of caching everything to GitHub is actively harmful on a persistent machine. The Mac's `~/.konan` (Kotlin/Native toolchains and klibs) is over 10GB — larger than the entire per-repo GitHub cache quota — and the post-job step spent ~3 hours tarring it, stalling completely when I closed the laptop lid mid-archive. On a persistent runner those directories already survive between runs on local disk, so the action now disables cache save/restore in mise-action, setup-gradle, and the konan cache step whenever `runner.environment == 'self-hosted'`. The best cache is a warm filesystem.
+
+## Caching to Railway buckets
+
+The ephemeral Linux runners have the opposite problem: nothing survives between jobs, so they genuinely need a remote cache.
+The obvious choice — `actions/cache`, like before — turned out to have a hidden cost.
+Cache uploads from a Railway container to GitHub's backend are billed as Railway **egress**, and CI caches here are multi-gigabyte (cargo registries, Gradle homes, mise tool installs) and re-uploaded on every key change.
+I was effectively paying Railway to ship tarballs to Microsoft.
+
+Railway's storage buckets[^4] are S3-compatible (Tigris-backed), and traffic between a Railway service and a bucket is free.
+The `runs-on/cache` action[^5] is a drop-in replacement for `actions/cache` that targets an S3 bucket when `RUNS_ON_S3_BUCKET_CACHE` is set — and falls back to GitHub's backend when it is not, which makes the routing trick one expression:
+
+```yaml
+- uses: runs-on/cache@v5
+  env:
+    RUNS_ON_S3_BUCKET_CACHE: ${{ runner.environment == 'self-hosted' && secrets.RAILWAY_CACHE_BUCKET || '' }}
+  with:
+    path: ~/.local/share/mise
+    key: ${{ matrix.project }}-mise-${{ runner.os }}-...
+```
+
+Self-hosted jobs cache to the bucket over Railway's free internal traffic; GitHub-hosted jobs (and fork PRs, which receive no secrets and therefore an empty bucket name) keep using GitHub's backend, where they are closest to the cache.
+The same workflow file serves both worlds without duplication.
+The one wrinkle is that `mise-action`'s built-in cache is hardwired to GitHub's backend, so it is disabled and the mise data directory is cached with an explicit `runs-on/cache` step instead.
+
+## Was it worth it?
+
+Cost-wise, unambiguously.
+The macOS multiplier is gone, Linux CI now runs on compute I was already paying for, and cache traffic costs nothing.
+The Actions free tier now comfortably covers what little still runs hosted.
+
+Effort-wise — the honest answer is that the migration surfaced about a dozen failures, and every single one was some flavor of the same lesson: _an enormous amount of CI tooling silently assumes GitHub's hosted images_.
+Preinstalled toolchains, stable workspace paths, disposable keychains, free proximity to the cache backend — none of it is guaranteed by the Actions protocol, and all of it is quietly load-bearing.
+The fixes were individually small, but finding each one cost a broken release build.
+
+Two things made the migration tractable.
+The first is mise with lockfiles: once every tool came from one locked, committed configuration, "works on the hosted image" and "works on my runner" stopped being different statements.
+The second is `runner.environment`, which GitHub exposes in every job: nearly every fix in this post is conditioned on it, so the same workflows still run unmodified on hosted runners — and if Railway or the MacBook ever lets me down, switching back is one repo variable away.
+
+[^1]: GitHub bills macOS runner minutes at 10x the rate of Linux minutes against the included Actions quota. See [GitHub Actions billing](https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-actions/about-billing-for-github-actions).
+
+[^2]: [GitHub Actions Self Hosted Runners on Railway](https://docs.railway.com/guides/github-actions-runners) — the template runs ephemeral runners with an autoscaler driven by `workflow_job` webhooks.
+
+[^3]: [mise](https://mise.jdx.dev/) is a polyglot runtime manager and task runner; its lockfile support pins exact tool versions and per-platform download URLs.
+
+[^4]: [Railway storage buckets](https://docs.railway.com/storage-buckets) are S3-compatible object storage backed by Tigris.
+
+[^5]: [runs-on/cache](https://github.com/runs-on/cache) is a fork of `actions/cache` that supports S3-compatible backends via `RUNS_ON_S3_BUCKET_CACHE`, falling back to GitHub's cache when unset.
