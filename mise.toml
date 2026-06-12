@@ -1,3 +1,6 @@
+[tools]
+bun = "latest"
+
 [tasks.install]
 description = "Install frontend dependencies"
 run = "bun install --frozen-lockfile"
