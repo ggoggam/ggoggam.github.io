@@ -50,19 +50,19 @@ with fsspec.open(url, "rt") as f:
 What that buys, concretely: `duckdb.sql("SELECT ... FROM read_parquet('lore://warehouse/events/*.parquet')")` reads a Parquet dataset straight out of a Lore repository at a given revision, with no glue code, because DuckDB already speaks fsspec.
 My entire job was to make Lore one of the things fsspec knows about.
 
-## Following GitFileSystem until it stopped fitting
+## What is the address of a repository?
 
 The cleanest way to design a new fsspec backend is to find the closest existing one and copy its decisions until you have a reason not to.
-`GitFileSystem` looked like exactly the right precedent: it attaches to a _local clone_, reads the tree at a branch or revision, and exposes repo-relative paths.
-The first release of `lore-fsspec` mirrored it down to the URL grammar — the clone directory was a constructor argument, in-filesystem paths were repository-relative, and the `:ref@inner` split was parsed the same way Git's is, quirks included.
+`GitFileSystem` is that precedent: it attaches to a _local clone_, reads the tree at a branch or revision, and exposes repo-relative paths.
+Most of it transfers unchanged — repository-relative inner paths, the `:ref@inner` split parsed the way Git's is (quirks included), read-only unless you ask otherwise — and `lore-fsspec` inherits all of it.
 
-Then I used it, and the precedent turned out to be borrowed from the wrong topology.
-Git is distributed: a clone is a full peer replica, so "point me at a directory on disk" really is the natural address of a repository.
+The decision that does not transfer is the most basic one: what string names a repository.
+Git is distributed, so a clone is a full peer replica, and "point me at a directory on disk" really is the natural address.
 Lore is **centralized**. The server is the source of record, and a clone is a session handle onto it — a working copy, caches, and branch pointers — not a replica of the history.
 The natural address of a Lore repository is therefore its server URL, `lore://host:port/repo`, the same string `lore clone` takes.
-Making users clone by hand first, then hand me the resulting directory, meant the filesystem could not name the thing it was a filesystem for.
+A filesystem that made you clone by hand first and then handed it the resulting directory could not name the thing it was a filesystem for.
 
-So `0.2.0` accepts the repository URL directly, and the local-clone form stays as the compatible alternative:
+So the constructor takes the repository URL, with the local-clone form as the alternative when you already have one:
 
 ```python
 # Remote-first: address the repo by its Lore server URL.
@@ -189,9 +189,9 @@ The payoff is that none of the interesting code is mine.
 Once Lore is an fsspec backend, `duckdb.register_filesystem(fs)` and a `read_parquet('lore://…')` query Just Work; Polars reads DataFrames off `fs.open()` file objects with column projection intact; the write-audit-publish flow above is the standard data-engineering pattern with a content-addressed VCS underneath instead of object storage.
 Roughly fifteen hundred lines of binding turn a month-old game-asset VCS into a substrate the entire Python data stack can already use.
 
-The part I got wrong the first time is the part I would keep.
-Copying `GitFileSystem` was right until the topology underneath stopped matching — a distributed VCS makes the local clone the thing you address, a centralized one makes it an implementation detail, and no amount of interface fidelity papers over that.
-Getting to the remote-first design meant keeping the borrowed decisions that still held (repo-relative paths, the `:ref@inner` grammar, read-only by default) and dropping exactly the one that didn't.
+The decision that mattered most was also the smallest: what string names a repository.
+Fidelity to `GitFileSystem` was worth keeping everywhere the topology matched — repo-relative paths, the `:ref@inner` grammar, read-only by default — and worth dropping in exactly the one place it didn't.
+A distributed VCS makes the local clone the thing you address; a centralized one makes it an implementation detail, and no amount of interface fidelity papers over that.
 
 It is also the closest I have come to the dataset-versioning setup I went looking for in the first place.
 OpenXet taught me what content-defined dedup costs to build; Lore supplies the versioning layer I did not want to write on top of it; and `lore-fsspec` is the seam that lets the Python data stack read the result without caring about any of it.
