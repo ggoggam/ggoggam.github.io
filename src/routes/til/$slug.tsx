@@ -11,6 +11,8 @@ export const Route = createFileRoute("/til/$slug")({
     const mod = (await modules[key]()) as any;
     const fm = mod.frontmatter;
     if (!fm?.published) throw notFound();
+    // Pulled in as its own CSS chunk, and awaited so the math never paints raw.
+    if (fm.math) await import("@/lib/katex-css");
     return {
       title: fm.title as string,
       date: format(new Date(fm.date), "yyyy-MM-dd"),
@@ -20,7 +22,14 @@ export const Route = createFileRoute("/til/$slug")({
     };
   },
   component: TILPostPage,
-  notFoundComponent: () => <div className="py-8 text-center">Post not found.</div>,
+  notFoundComponent: () => (
+    <div className="py-16">
+      <h1 className="title-display text-h2">Not found</h1>
+      <p className="mt-3 text-ink-muted">
+        No note lives at this address. Try the <a href="/til">TIL index</a>.
+      </p>
+    </div>
+  ),
 });
 
 function TILPostPage() {

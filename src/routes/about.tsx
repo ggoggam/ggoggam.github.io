@@ -8,31 +8,46 @@ export const Route = createFileRoute("/about")({
 });
 
 function AboutPage() {
-  const imageFileNames = getImages();
+  const photos = getImages();
   useSeo({
     title: "About",
     description: "About 꼬깜 — software engineer and cat enthusiast.",
     path: "/about",
   });
+
   return (
-    <div className="space-y-8">
+    <div>
       <AboutFragment />
-      <div className="space-y-4">
-        <p className="font-mono text-sm">
-          Here are some photos of my cat, <em>Ggoggam</em> (꼬깜).
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {imageFileNames.map((src, index) => (
-            <img
-              key={index}
-              src={src}
-              alt="image of ggoggam"
-              loading="lazy"
-              className="w-full aspect-square object-cover rounded"
-            />
+
+      <section aria-labelledby="cat" className="mt-14">
+        <h2 id="cat" className="label mb-5 border-b border-rule pb-4">
+          꼬깜, the cat
+        </h2>
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {photos.map((photo, index) => (
+            <li key={photo.webp400}>
+              <picture>
+                <source
+                  type="image/webp"
+                  srcSet={`${photo.webp400} 400w, ${photo.webp800} 800w`}
+                  sizes="(min-width: 640px) 208px, 45vw"
+                />
+                <img
+                  src={photo.jpg400}
+                  /* Decorative: the heading above already says what these are,
+                     and nine identical alt strings only add noise in a reader. */
+                  alt=""
+                  width={400}
+                  height={400}
+                  loading={index < 3 ? "eager" : "lazy"}
+                  decoding="async"
+                  className="aspect-square w-full rounded-sm border border-rule object-cover"
+                />
+              </picture>
+            </li>
           ))}
-        </div>
-      </div>
+        </ul>
+      </section>
     </div>
   );
 }

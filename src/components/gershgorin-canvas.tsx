@@ -8,24 +8,18 @@ const DEFAULT_MATRIX = [
   [0, -1, 2],
 ];
 
-// Muted palette consistent with the blog's gray-based minimalist style
-const COLORS = [
-  "rgba(220, 38, 38, 0.35)",
-  "rgba(22, 163, 74, 0.35)",
-  "rgba(37, 99, 235, 0.35)",
-  "rgba(161, 98, 7, 0.35)",
-  "rgba(126, 34, 206, 0.35)",
-  "rgba(194, 65, 12, 0.35)",
-];
+function token(name: string, fallback: string) {
+  if (typeof window === "undefined") return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
 
-const STROKE_COLORS = [
-  "rgba(220, 38, 38, 0.8)",
-  "rgba(22, 163, 74, 0.8)",
-  "rgba(37, 99, 235, 0.8)",
-  "rgba(161, 98, 7, 0.8)",
-  "rgba(126, 34, 206, 0.8)",
-  "rgba(194, 65, 12, 0.8)",
-];
+/** `#rrggbb` (or a 3-digit hex) to `rgba(...)` so canvas can use the ink token. */
+function alpha(hex: string, a: number) {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? [...h].map((c) => c + c).join("") : h;
+  const n = parseInt(full, 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
 
 function computeGershgorinCircles(m: number[][]) {
   return m.map((row, i) => {
@@ -35,56 +29,108 @@ function computeGershgorinCircles(m: number[][]) {
   });
 }
 
+/**
+ * Frames the plot on the discs themselves rather than on the origin. A matrix
+ * with all-positive diagonal entries otherwise leaves the whole left half of the
+ * canvas empty. The origin is kept in view so the axes still mean something, and
+ * x and y share one scale so the discs stay circular.
+ */
+function viewport(width: number, m: number[][]) {
+  const circles = computeGershgorinCircles(m);
+  const lo = Math.min(0, ...circles.map((c) => c.center - c.radius));
+  const hi = Math.max(0, ...circles.map((c) => c.center + c.radius));
+  const span = Math.max(hi - lo, 1e-6);
+  const scale = (width * 0.88) / span;
+  const maxRadius = circles.reduce((max, c) => Math.max(max, c.radius), 0);
+  const height = Math.round(
+    Math.min(width, Math.max(width * 0.34, maxRadius * scale * 2 + width * 0.12))
+  );
+  // Canvas x of the complex origin, given the data is centred in the frame.
+  const originX = width / 2 - ((lo + hi) / 2) * scale;
+  return { circles, scale, height, originX };
+}
+
+export function plotHeight(width: number, m: number[][]) {
+  return viewport(width, m).height;
+}
+
 function draw(canvas: HTMLCanvasElement, m: number[][]) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  const size = canvas.width;
-  const originX = size / 2;
-  const originY = size / 2;
+  const w = canvas.width;
+  const h = canvas.height;
+  const { circles, scale, originX } = viewport(w, m);
+  const originY = h / 2;
 
-  const circles = computeGershgorinCircles(m);
-  const maxExtent = circles.reduce((max, c) => Math.max(max, Math.abs(c.center) + c.radius), 1);
-  const scale = size / 2 / (maxExtent * 1.2);
-
-  ctx.clearRect(0, 0, size, size);
+  ctx.clearRect(0, 0, w, h);
 
   function toCanvasCoord(x: number, y: number) {
     return { x: originX + x * scale, y: originY - y * scale };
   }
 
-  // Axes — gray-300
+  const ink = token("--ink", "#111111");
+
   ctx.beginPath();
   ctx.moveTo(0, originY);
-  ctx.lineTo(size, originY);
+  ctx.lineTo(w, originY);
   ctx.moveTo(originX, 0);
-  ctx.lineTo(originX, size);
-  ctx.strokeStyle = "#d1d5db";
+  ctx.lineTo(originX, h);
+  ctx.strokeStyle = token("--rule-strong", "#c9c9c6");
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  const fontSize = Math.round(size / 40);
+  const fontSize = Math.round(w / 28);
 
-  circles.forEach((circle, index) => {
-    const centerCoord = toCanvasCoord(circle.center, 0);
+  // Red, blue, black — the Swiss poster set. Tints stay light so overlaps read
+  // as a legible third value instead of going muddy, and identity is carried by
+  // the outline, which is drawn at full strength.
+  const inks = [
+    token("--plot-1", "#d93a1e"),
+    token("--plot-2", "#1d4ed8"),
+    token("--plot-3", "#111111"),
+  ];
+  const blend = token("--plot-blend", "multiply") as GlobalCompositeOperation;
+
+  ctx.save();
+  ctx.globalCompositeOperation = blend;
+  circles.forEach((circle, i) => {
+    const c = toCanvasCoord(circle.center, 0);
     ctx.beginPath();
-    ctx.arc(centerCoord.x, centerCoord.y, circle.radius * scale, 0, 2 * Math.PI);
-    ctx.fillStyle = COLORS[index % COLORS.length];
+    ctx.arc(c.x, c.y, circle.radius * scale, 0, 2 * Math.PI);
+    ctx.fillStyle = alpha(inks[i % inks.length], 0.12);
     ctx.fill();
-    ctx.strokeStyle = STROKE_COLORS[index % STROKE_COLORS.length];
+  });
+  ctx.restore();
+
+  circles.forEach((circle, i) => {
+    const c = toCanvasCoord(circle.center, 0);
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, circle.radius * scale, 0, 2 * Math.PI);
+    ctx.strokeStyle = inks[i % inks.length];
     ctx.lineWidth = 1.5;
     ctx.stroke();
+  });
 
-    // Center dot — gray-600
+  // Centres and labels ride above every disc so no wash sits on top of them.
+  ctx.font = `${fontSize}px "Spline Sans Mono", ui-monospace, monospace`;
+  ctx.textBaseline = "alphabetic";
+  circles.forEach((circle) => {
+    const c = toCanvasCoord(circle.center, 0);
     ctx.beginPath();
-    ctx.arc(centerCoord.x, centerCoord.y, 3, 0, 2 * Math.PI);
-    ctx.fillStyle = "#4b5563";
+    ctx.arc(c.x, c.y, 2.5, 0, 2 * Math.PI);
+    ctx.fillStyle = ink;
     ctx.fill();
 
-    // Label — gray-700, Geist Mono
-    ctx.fillStyle = "#374151";
-    ctx.font = `${fontSize}px "Geist Mono", monospace`;
-    ctx.fillText(String(circle.center), centerCoord.x + 6, centerCoord.y - 6);
+    // A paper-coloured halo rather than a knocked-out box: it keeps the number
+    // legible over stacked inks without stamping a rectangle into the artwork.
+    const label = String(circle.center);
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = token("--paper", "#fbfbfb");
+    ctx.strokeText(label, c.x + 6, c.y - 8);
+    ctx.fillStyle = ink;
+    ctx.fillText(label, c.x + 6, c.y - 8);
   });
 }
 
@@ -119,7 +165,10 @@ export function GershgorinCanvas() {
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
-    if (canvas) draw(canvas, matrixRef.current);
+    if (!canvas || !canvas.width) return;
+    // A new matrix can change the largest radius, so the box is resized too.
+    canvas.height = plotHeight(canvas.width, matrixRef.current);
+    draw(canvas, matrixRef.current);
   }, []);
 
   useEffect(() => {
@@ -127,16 +176,23 @@ export function GershgorinCanvas() {
     redraw();
   }, [matrix, redraw]);
 
+  // Redraw when the OS theme flips so the plot follows the ink token.
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => redraw();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [redraw]);
+
   useEffect(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;
     if (!container || !canvas) return;
 
     const observer = new ResizeObserver((entries) => {
-      const width = entries[0].contentRect.width;
-      const size = Math.min(width, 600);
-      canvas.width = size;
-      canvas.height = size;
+      const width = Math.min(entries[0].contentRect.width, 600);
+      canvas.width = width;
+      canvas.height = plotHeight(width, matrixRef.current);
       draw(canvas, matrixRef.current);
     });
 
@@ -156,23 +212,31 @@ export function GershgorinCanvas() {
   }
 
   return (
-    <div className="w-full flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
+    <div className="flex w-full flex-col gap-3">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="gershgorin-matrix" className="label text-2xs">
+          matrix
+        </label>
         <input
+          id="gershgorin-matrix"
           type="text"
           value={input}
           onChange={(e) => handleInput(e.target.value)}
-          className={`w-full border rounded px-3 py-2 text-sm font-geist-mono bg-gray-50 focus:outline-none focus:ring-1 transition-colors ${
-            error
-              ? "border-red-300 focus:ring-red-300 text-red-700"
-              : "border-gray-200 focus:ring-gray-300 text-gray-800"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? "gershgorin-error" : undefined}
+          className={`w-full rounded-sm border bg-paper-sunk px-3 py-2 font-mono text-sm text-ink transition-colors ${
+            error ? "border-accent" : "border-rule"
           }`}
           spellCheck={false}
         />
-        {error && <p className="text-xs text-red-400 font-geist-mono">{error}</p>}
+        {error && (
+          <p id="gershgorin-error" role="alert" className="font-mono text-xs text-accent">
+            {error}
+          </p>
+        )}
       </div>
 
-      <div ref={containerRef} className="w-full flex justify-center">
+      <div ref={containerRef} className="flex w-full justify-center">
         <canvas ref={canvasRef} />
       </div>
     </div>

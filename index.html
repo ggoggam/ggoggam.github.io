@@ -4,13 +4,26 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/x-icon" href="/icon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#fbfbfb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e0e0e" media="(prefers-color-scheme: dark)" />
     <meta name="google-adsense-account" content="ca-pub-7271700485488471" />
     <meta name="google-site-verification" content="UTWiNkqBKoQ9bKTbvn4ZoCauup-ir0AfRY64Gfc2RoM" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.19/dist/katex.min.css" />
+
+    <!-- Bodoni Moda carries the display voice, Spline Sans Mono every label and
+         code block. Preconnect first so the fonts are not queued behind the
+         stylesheet parse the way the old @import was. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..600&family=Spline+Sans+Mono:ital,wght@0,400..600;1,400..600&display=swap"
+    />
+
     <script>
       // GitHub Pages SPA redirect handler
       (function (l) {
@@ -29,6 +42,37 @@
     <title>꼬깜</title>
   </head>
   <body>
+    <!--
+      IMPECCABLE DIRECTION CONTRACT
+
+      THESIS: A reading surface where hierarchy comes from typographic register,
+      not from boxes. Refuses the Tailwind-blog default of gray pills, bold-sans
+      headings, and metadata faded until it fails contrast.
+
+      OWN-WORLD: Near-white paper / near-black ink, one hairline rule weight, no
+      shadows and no filled chips. Bodoni Moda (didone display) for titles,
+      Spline Sans Mono uppercase-tracked for every date, tag, and label,
+      Pretendard for prose because it is the only face here that draws Korean.
+      The reading surface stays achromatic: accent red appears on the new-post
+      indicator and on error text, and nowhere else in the chrome. Colour is
+      allowed only where it does work the type cannot — the Gershgorin plot
+      overprints three Swiss inks so overlapping discs stay tellable apart.
+
+      STORY: A stranger arrives from a link, finds the post immediately, reads
+      10+ minutes without the interface asking for attention, and can tell at a
+      glance what else is here.
+
+      FIRST VIEWPORT: Wordmark left, mono nav right, both on a hairline. Title in
+      display serif at fluid 32-56px, metadata as one tracked mono line beneath.
+      Prose begins within the first screen.
+
+      FORM: Editorial serif + mono, pinned by the user against reference
+      hermes-agent.nousresearch.com. Direction seed key fd5f7d9a (roll assigned
+      grounded index 7; a user-pinned direction beats the roll).
+
+      FINISH: unreviewed and undocumented is unfinished; this build ends with the
+      finish review, the verdict, and DESIGN.md
+    -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

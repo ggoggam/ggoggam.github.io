@@ -18,6 +18,6 @@ export default tseslint.config(
   },
   prettier,
   {
-    ignores: ["dist/", "node_modules/", "src/routeTree.gen.ts"],
+    ignores: ["dist/", ".ssr-build/", "node_modules/", "src/routeTree.gen.ts"],
   }
 );
