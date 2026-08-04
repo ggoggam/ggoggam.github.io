@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useThemeChange } from "@/lib/theme";
 
 const COLS = 12;
 const PADDING = 0.08; // fraction of canvas width
@@ -94,13 +95,8 @@ export function SchotterCanvas({ seed: seedProp }: { seed?: number }) {
     redraw();
   }, [seed, redraw]);
 
-  // Redraw when the OS theme flips so the plate follows the ink token.
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => redraw();
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, [redraw]);
+  // Redraw when the theme changes so the plate follows the ink token.
+  useThemeChange(redraw);
 
   useEffect(() => {
     const container = containerRef.current;

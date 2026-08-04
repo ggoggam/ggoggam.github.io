@@ -28,7 +28,6 @@ function BlogPage() {
   return (
     <PostList
       title="Blog"
-      description="Long-form posts, worked through end to end"
       posts={posts}
       selectedTag={tag}
       onTagChange={(newTag) => navigate({ to: "/blog", search: newTag ? { tag: newTag } : {} })}

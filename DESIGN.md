@@ -133,8 +133,10 @@ column, and the footer alike, so the page reads as one column of set text with
 rules across it rather than as a shell containing content. Type is fluid per
 role — every step is a `clamp()` travelling between a 375px and a 1280px
 viewport — so nothing snaps at a breakpoint. Light and dark are peer themes
-declared through `prefers-color-scheme` and `color-scheme`, not a toggle bolted
-onto a light design.
+declared through `prefers-color-scheme` and `color-scheme`, not a dark mode
+bolted onto a light design. The footer toggle overrides that system reading
+without displacing it: it cycles auto → light → dark, and auto — the absence of
+any stored choice — is where every visitor starts and can return to.
 
 The confirmed rejection is the Tailwind-blog default: gray pills for tags, bold
 sans headings, and metadata faded until it fails contrast. The system's answer to
@@ -192,10 +194,10 @@ on almost nothing, plus a separate ink set reserved for data.
 
 ### Hierarchy
 
-- **Display** (500, `clamp(2rem, 1.42rem + 2.48vw, 3.5rem)` = 32→56px, 1.04, −0.02em, balanced wrap): The `h1` of a post or index page. One per page.
+- **Display** (500, `clamp(2rem, 1.42rem + 2.48vw, 3.5rem)` = 32→56px, 1.04, −0.02em, balanced wrap): The `h1` of a post. One per page. The index pages set their `h1` visually-hidden — the masthead nav already names the section, and the home page opens on the Schotter plate instead.
 - **Headline** (500, `clamp(1.375rem … 1.75rem)`, 1.04, −0.02em): `h1`/`h2` inside prose. Spaced 56px above, 16px below, so sections read as grouped.
 - **Title** (500, `clamp(1.0625rem … 1.25rem)`, 1.04, −0.02em): Post-row links in every list, and `h3` in prose. The display face at body size is what makes a list of titles read as a contents page.
-- **Lede** (400, `clamp(1.0625rem … 1.25rem)`, 1.6, capped at 46ch): The single standfirst paragraph under a page `h1`.
+- **Lede** (400, `clamp(1.0625rem … 1.25rem)`, 1.6): The opening standfirst copy of a page. Only the About page still runs one — the index pages carry no visible title or standfirst.
 - **Body** (400, `clamp(1rem … 1.125rem)`, 1.72, capped at 64ch): All prose. Paragraph rhythm is 20px top and bottom.
 - **Label** (400, 12px, 0.14em, uppercase, tabular figures): Every date, section nav item, tag heading, kind marker, footer link, table header, and caption. `label-strong` is the same voice at full ink for the active or emphasized instance.
 - **Micro label** (400, 11px, 0.06em, uppercase): Tag chips and the kind marker in dense rows, where 0.14em would break the word apart at that size.
@@ -221,7 +223,7 @@ with a fixed 6.5rem date column and 24px gap.
 Vertical rhythm comes from a small set of repeated steps rather than a numeric
 scale: 40px above and below main content (56px at ≥640px), 40px under a page
 header, 20px per post row, 56px above a prose heading and 16px under it, 64px
-before the comments section, 80px before the closing plate on the home page.
+before the comments section, 64px under the opening plate on the home page.
 Header padding is asymmetric on purpose — 40px above the wordmark (56px at
 ≥640px), 20px below — so the masthead sits down from the top edge rather than
 being vertically centered in a bar.
@@ -281,6 +283,19 @@ post from the last month, with the reason spoken to screen readers in a
 visually-hidden span. The footer is the same construction inverted: a mono
 copyright left, mono external links right, on a top hairline.
 
+### Theme Toggle
+
+Last item in the footer row, and built as a footer link rather than as a
+control: the label voice, no border, no background, no icon, no switch. The word
+it shows — `auto`, `light`, `dark` — is the theme currently in force, and a
+press advances the cycle; the accessible name carries both halves ("Theme: auto.
+Switch to light.") because the visible word alone cannot say which it is. It is
+fixed at 9ch so the footer does not reflow as the word changes length. The
+choice is stored under one key and re-applied by an inline script in the
+document head before first paint, so a stored theme never flashes the system one
+first. Everything that reads a color at paint time rather than through CSS —
+both canvases, and the Giscus iframe — is handed the same choice.
+
 ### Post Row (signature)
 
 The list primitive of the whole site. A bottom hairline, a fixed 6.5rem mono
@@ -328,8 +343,8 @@ numbers are generated content but are still text a reader parses, so they sit at
 
 ### Generative Plates
 
-Two canvases carry the site's only imagery: a Schotter homage that closes the
-home page (never opens it) and the interactive Gershgorin plot in one TIL. Both
+Two canvases carry the site's only imagery: a Schotter homage that opens the
+home page in place of a title, and the interactive Gershgorin plot in one TIL. Both
 read their strokes from the live CSS custom properties, so they re-theme with
 the page instead of shipping baked colors. Data color is the only place the
 system permits more than one hue at a time.

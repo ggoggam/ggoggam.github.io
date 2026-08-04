@@ -3,30 +3,20 @@ import type { PostMeta } from "@/lib/posts";
 
 export type PostListProps = {
   title: string;
-  description: string;
   posts: PostMeta[];
   selectedTag: string | undefined;
   onTagChange: (tag: string | undefined) => void;
 };
 
-export default function PostList({
-  title,
-  description,
-  posts,
-  selectedTag,
-  onTagChange,
-}: PostListProps) {
+export default function PostList({ title, posts, selectedTag, onTagChange }: PostListProps) {
   const allTags = [...new Set(posts.flatMap((p) => p.tags))].sort((a, b) => a.localeCompare(b));
   const filtered = selectedTag ? posts.filter((p) => p.tags.includes(selectedTag)) : posts;
 
   return (
     <div>
-      <header className="mb-10">
-        <h1 className="title-display text-title">{title}</h1>
-        {/* Sentence-length copy stays in the body face; the label voice is for
-            one to three words, where the tracking still reads as a label. */}
-        <p className="mt-3 text-ink-muted">{description}</p>
-      </header>
+      {/* The nav already says which section this is, so the title only has to
+          exist for the document outline and for screen readers. */}
+      <h1 className="sr-only">{title}</h1>
 
       {allTags.length > 0 && (
         // Twenty tags ahead of the first post is a wall, so the archive's index

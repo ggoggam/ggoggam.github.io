@@ -5,8 +5,36 @@
     <link rel="icon" type="image/x-icon" href="/icon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#fbfbfb" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0e0e0e" media="(prefers-color-scheme: dark)" />
+    <meta
+      name="theme-color"
+      content="#fbfbfb"
+      media="(prefers-color-scheme: light)"
+      data-scheme="light"
+    />
+    <meta
+      name="theme-color"
+      content="#0e0e0e"
+      media="(prefers-color-scheme: dark)"
+      data-scheme="dark"
+    />
+
+    <script>
+      // Applied before first paint, so a stored theme never flashes the system
+      // one first. Kept in step with applyThemePref() in src/lib/theme.ts.
+      (function () {
+        try {
+          var pref = localStorage.getItem("theme");
+          if (pref !== "light" && pref !== "dark") return;
+          document.documentElement.setAttribute("data-theme", pref);
+          var metas = document.querySelectorAll("meta[name='theme-color']");
+          for (var i = 0; i < metas.length; i++) {
+            metas[i].media = metas[i].dataset.scheme === pref ? "all" : "not all";
+          }
+        } catch (e) {
+          /* a blocked localStorage just leaves the system theme in place */
+        }
+      })();
+    </script>
     <meta name="google-adsense-account" content="ca-pub-7271700485488471" />
     <meta name="google-site-verification" content="UTWiNkqBKoQ9bKTbvn4ZoCauup-ir0AfRY64Gfc2RoM" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />

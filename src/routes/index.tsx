@@ -16,13 +16,19 @@ function HomePage() {
 
   return (
     <div>
-      <header className="mb-12">
-        <h1 className="title-display text-title">Notes on software engineering</h1>
-        <p className="mt-3 max-w-[46ch] text-lede leading-[1.6] text-ink-muted">
-          Long-form posts on problems worked through end to end, and shorter notes on one thing at a
-          time.
-        </p>
-      </header>
+      {/* The plate opens the page in place of a title. The h1 stays for the
+          document outline and for screen readers, which cannot read a canvas. */}
+      <h1 className="sr-only">꼬깜 (ggoggam)</h1>
+
+      <figure className="mb-16 flex flex-col items-center gap-5">
+        <SchotterCanvas />
+        <figcaption className="max-w-[42ch] text-center text-sm leading-relaxed text-ink-muted">
+          <a href="https://collections.vam.ac.uk/item/O221321/schotter-print-nees-georg/">
+            <cite className="not-italic">Schotter</cite>
+          </a>
+          , George Nees, 1968. Redrawn on every visit.
+        </figcaption>
+      </figure>
 
       <section aria-labelledby="recent">
         <h2 id="recent" className="label mb-1 border-b border-rule pb-4">
@@ -47,18 +53,6 @@ function HomePage() {
           ))}
         </ul>
       </section>
-
-      {/* The plate closes the page rather than opening it: it is the author's
-          signature, not what a first-time reader arrived for. */}
-      <figure className="mt-20 flex flex-col items-center gap-5 border-t border-rule pt-14">
-        <SchotterCanvas />
-        <figcaption className="max-w-[42ch] text-center text-sm leading-relaxed text-ink-muted">
-          <a href="https://collections.vam.ac.uk/item/O221321/schotter-print-nees-georg/">
-            <cite className="not-italic">Schotter</cite>
-          </a>
-          , George Nees, 1968. Redrawn on every visit.
-        </figcaption>
-      </figure>
     </div>
   );
 }
