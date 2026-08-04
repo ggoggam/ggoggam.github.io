@@ -16,22 +16,21 @@ colors:
   plot-3: "#111111"
 typography:
   display:
-    fontFamily: '"Bodoni Moda", "Pretendard Variable", Pretendard, Georgia, "Times New Roman", serif'
+    fontFamily: '"Noto Sans KR", "Pretendard Variable", Pretendard, "Helvetica Neue", Arial, sans-serif'
     fontSize: "clamp(2rem, 1.42rem + 2.48vw, 3.5rem)"
-    fontWeight: 500
+    fontWeight: 700
     lineHeight: 1.04
     letterSpacing: "-0.02em"
-    fontVariation: "opsz variable, 6..96"
   headline:
-    fontFamily: '"Bodoni Moda", "Pretendard Variable", Pretendard, Georgia, "Times New Roman", serif'
+    fontFamily: '"Noto Sans KR", "Pretendard Variable", Pretendard, "Helvetica Neue", Arial, sans-serif'
     fontSize: "clamp(1.375rem, 1.22rem + 0.66vw, 1.75rem)"
-    fontWeight: 500
+    fontWeight: 700
     lineHeight: 1.04
     letterSpacing: "-0.02em"
   title:
-    fontFamily: '"Bodoni Moda", "Pretendard Variable", Pretendard, Georgia, "Times New Roman", serif'
+    fontFamily: '"Noto Sans KR", "Pretendard Variable", Pretendard, "Helvetica Neue", Arial, sans-serif'
     fontSize: "clamp(1.0625rem, 1rem + 0.3vw, 1.25rem)"
-    fontWeight: 500
+    fontWeight: 700
     lineHeight: 1.04
     letterSpacing: "-0.02em"
   lede:
@@ -121,7 +120,7 @@ components:
 
 This is a reading surface built out of paper, ink, and one hairline. Nothing is
 boxed, nothing is filled, nothing is lifted. Hierarchy is carried entirely by
-typographic register — a didone serif for what is being read, a tracked
+typographic register — a bold neutral sans for what is being read, a tracked
 uppercase mono for what is being read *about* — and by a single 1px rule that
 separates rows, headers, and footers. There is no card, no pill, no chip, and no
 shadow anywhere in the build; a grep across `src/` and `globals.css` returns zero
@@ -148,7 +147,7 @@ background.
 
 - Near-white paper / near-black ink; a single accent that is nearly absent.
 - One hairline weight (1px) in two strengths; zero shadows, zero filled chips.
-- Three type roles — didone display, mono label, Pretendard body — where the body face also backs the other two stacks because it is the only one that draws Korean.
+- Three type roles — bold display sans, mono label, Pretendard body — where display and body each draw Hangul in their own voice, and Pretendard backs the mono stack, which does not.
 - Fluid `clamp()` scale per role, 375px → 1280px, no breakpoint steps.
 - One 64ch measure shared by header, content, and footer.
 - Contrast floor enforced by token: `--ink-muted` is the least any real text may be.
@@ -186,17 +185,17 @@ on almost nothing, plus a separate ink set reserved for data.
 
 ## Typography
 
-**Display Font:** Bodoni Moda (variable optical size 6–96, weights 400–600), falling back through Pretendard to Georgia and Times New Roman
+**Display Font:** Noto Sans KR (variable, weights 400–700; set at 700), drawing Hangul and Latin from one family, falling back through Pretendard to Helvetica Neue and Arial
 **Body Font:** Pretendard Variable (falling back to system sans)
 **Label/Mono Font:** Spline Sans Mono (italic and roman, 400–600), falling back through Pretendard
 
-**Character:** A didone serif with high stroke contrast against a neutral geometric mono — an editorial pairing where the serif does all the announcing and the mono does all the annotating. Pretendard sits underneath both stacks because it is the only face in the system that draws Korean, which the 꼬깜 wordmark requires.
+**Character:** A neutral humanist sans against a neutral geometric mono. The display face does all the announcing and the mono does all the annotating. Noto Sans KR covers Hangul and Latin in one family, so a Korean title announces in the same voice as an English one instead of dropping to the body face — but it is also close in temperament to Pretendard, which means the display voice gets almost nothing from the drawing itself. Weight does the work instead: display is set at 700 against body at 400, a two-step gap wide enough to read as a different voice rather than as emphasis. Pretendard still sits under the mono stack, which draws no Korean of its own, and remains the face of the 꼬깜 wordmark.
 
 ### Hierarchy
 
-- **Display** (500, `clamp(2rem, 1.42rem + 2.48vw, 3.5rem)` = 32→56px, 1.04, −0.02em, balanced wrap): The `h1` of a post. One per page. The index pages set their `h1` visually-hidden — the masthead nav already names the section, and the home page opens on the Schotter plate instead.
-- **Headline** (500, `clamp(1.375rem … 1.75rem)`, 1.04, −0.02em): `h1`/`h2` inside prose. Spaced 56px above, 16px below, so sections read as grouped.
-- **Title** (500, `clamp(1.0625rem … 1.25rem)`, 1.04, −0.02em): Post-row links in every list, and `h3` in prose. The display face at body size is what makes a list of titles read as a contents page.
+- **Display** (700, `clamp(2rem, 1.42rem + 2.48vw, 3.5rem)` = 32→56px, 1.04, −0.02em, balanced wrap): The `h1` of a post. One per page. The index pages set their `h1` visually-hidden — the masthead nav already names the section, and the home page opens on the Schotter plate instead.
+- **Headline** (700, `clamp(1.375rem … 1.75rem)`, 1.04, −0.02em): `h1`/`h2` inside prose. Spaced 56px above, 16px below, so sections read as grouped.
+- **Title** (700, `clamp(1.0625rem … 1.25rem)`, 1.04, −0.02em): Post-row links in every list, and `h3` in prose. The display face at body size is what makes a list of titles read as a contents page.
 - **Lede** (400, `clamp(1.0625rem … 1.25rem)`, 1.6): The opening standfirst copy of a page. Only the About page still runs one — the index pages carry no visible title or standfirst.
 - **Body** (400, `clamp(1rem … 1.125rem)`, 1.72, capped at 64ch): All prose. Paragraph rhythm is 20px top and bottom.
 - **Label** (400, 12px, 0.14em, uppercase, tabular figures): Every date, section nav item, tag heading, kind marker, footer link, table header, and caption. `label-strong` is the same voice at full ink for the active or emphasized instance.
@@ -205,7 +204,7 @@ on almost nothing, plus a separate ink set reserved for data.
 
 ### Named Rules
 
-**The Three Voices Rule.** Display serif announces, mono annotates, Pretendard reads. A piece of text picks exactly one. There is no bold-sans heading anywhere in this system.
+**The Three Voices Rule.** The display sans announces, mono annotates, Pretendard reads. A piece of text picks exactly one. A heading is never set in the body face — the two sans faces are told apart by weight alone, so borrowing Pretendard for a heading collapses the distinction entirely.
 
 **The Label Length Rule.** The label voice is for one to three words. Sentence-length copy — excerpts, ledes, descriptions, captions — stays in the body face at `--ink-muted`, because 0.14em tracking on a sentence stops being a label and starts being unreadable.
 
@@ -354,7 +353,7 @@ system permits more than one hue at a time.
 ### Do:
 
 - **Do** express metadata as `.label` — 12px Spline Sans Mono, uppercase, 0.14em, `--ink-muted`, tabular figures — and mark the active one with `label-strong`.
-- **Do** set every title and heading in the display face via `.title-display` (Bodoni Moda 500, −0.02em, 1.04, balanced wrap).
+- **Do** set every title and heading in the display face via `.title-display` (Noto Sans KR 700, −0.02em, 1.04, balanced wrap) — it holds for Korean titles too.
 - **Do** separate things with a 1px hairline in `--rule`, escalating to `--rule-strong` and then `--ink` for emphasis.
 - **Do** keep every column inside the shared 64ch `--measure`, with a 24px gutter.
 - **Do** give interactive text at least 24px of hit area through padding, and leave the padding invisible.
@@ -366,7 +365,7 @@ system permits more than one hue at a time.
 
 - **Don't** add a shadow. There are none in the build, and depth is a hairline or the sunk paper tone.
 - **Don't** put a filled background behind a tag, kind marker, date, or status word. Tags are microtype, not chips.
-- **Don't** set a heading in a bold sans. The display serif is the only heading voice.
+- **Don't** set a heading in the body face. `.title-display` is the only heading voice.
 - **Don't** drop text below `--ink-muted` to make it recede; change its register instead. `--ink-faint` is for rules, markers, and non-text only.
 - **Don't** spend the accent on anything but the new-post indicator and a genuine invalid state.
 - **Don't** pull `--plot-1/2/3` into UI chrome; they exist to separate overlapping data and nothing else.

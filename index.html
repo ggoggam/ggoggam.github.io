@@ -42,14 +42,17 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
-    <!-- Bodoni Moda carries the display voice, Spline Sans Mono every label and
-         code block. Preconnect first so the fonts are not queued behind the
-         stylesheet parse the way the old @import was. -->
+    <!-- Noto Sans KR carries the display voice, Spline Sans Mono every label and
+         code block. The KR cut draws Hangul and Latin in one family, so a Korean
+         title keeps the display register instead of dropping to the body face.
+         Google serves the Hangul as its own unicode-range subsets, so a
+         Latin-only page never downloads them. Preconnect first so the fonts are
+         not queued behind the stylesheet parse the way the old @import was. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..600&family=Spline+Sans+Mono:ital,wght@0,400..600;1,400..600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400..700&family=Spline+Sans+Mono:ital,wght@0,400..600;1,400..600&display=swap"
     />
 
     <script>
@@ -78,10 +81,11 @@
       headings, and metadata faded until it fails contrast.
 
       OWN-WORLD: Near-white paper / near-black ink, one hairline rule weight, no
-      shadows and no filled chips. Bodoni Moda (didone display) for titles,
-      Spline Sans Mono uppercase-tracked for every date, tag, and label,
-      Pretendard for prose because it is the only face here that draws Korean.
-      The reading surface stays achromatic: accent red appears on the new-post
+      shadows and no filled chips. Noto Sans KR (neutral sans, bold) for titles,
+      Spline Sans Mono uppercase-tracked for every date, tag, and label, and
+      Pretendard for prose. Display and body both draw Hangul, so a Korean title
+      announces in the display voice rather than dropping to the body face. The
+      reading surface stays achromatic: accent red appears on the new-post
       indicator and on error text, and nowhere else in the chrome. Colour is
       allowed only where it does work the type cannot — the Gershgorin plot
       overprints three Swiss inks so overlapping discs stay tellable apart.
@@ -91,11 +95,12 @@
       glance what else is here.
 
       FIRST VIEWPORT: Wordmark left, mono nav right, both on a hairline. Title in
-      display serif at fluid 32-56px, metadata as one tracked mono line beneath.
-      Prose begins within the first screen.
+      the bold display sans at fluid 32-56px, metadata as one tracked mono line
+      beneath. Prose begins within the first screen.
 
-      FORM: Editorial serif + mono, pinned by the user against reference
-      hermes-agent.nousresearch.com. Direction seed key fd5f7d9a (roll assigned
+      FORM: Bold neutral sans + mono, pinned by the user. Supersedes the
+      earlier editorial serif pairing taken from reference
+      hermes-agent.nousresearch.com; direction seed key fd5f7d9a (roll assigned
       grounded index 7; a user-pinned direction beats the roll).
 
       FINISH: unreviewed and undocumented is unfinished; this build ends with the
