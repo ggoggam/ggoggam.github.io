@@ -28,7 +28,6 @@ function TILPage() {
   return (
     <PostList
       title="TIL"
-      description="Today I learned — short notes on one thing"
       posts={posts}
       selectedTag={tag}
       onTagChange={(newTag) => navigate({ to: "/til", search: newTag ? { tag: newTag } : {} })}

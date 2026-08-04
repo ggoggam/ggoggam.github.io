@@ -1,3 +1,5 @@
+import ThemeToggle from "./theme-toggle";
+
 export type SiteFooterProps = {
   github: string;
   source: string;
@@ -27,6 +29,9 @@ export default function SiteFooter({ github, source }: SiteFooterProps) {
           >
             source
           </a>
+        </li>
+        <li>
+          <ThemeToggle />
         </li>
       </ul>
     </div>

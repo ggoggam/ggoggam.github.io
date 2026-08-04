@@ -2,6 +2,7 @@ import Giscus from "@giscus/react";
 import { Link } from "@tanstack/react-router";
 import type { MDXComponents } from "mdx/types";
 import { mdxComponents } from "@/components/mdx-component";
+import { useThemePref } from "@/lib/theme";
 
 export type PostArticleProps = {
   slug: string;
@@ -13,6 +14,10 @@ export type PostArticleProps = {
 };
 
 export default function PostArticle({ title, date, tags, type, Component }: PostArticleProps) {
+  // The comment thread is an iframe with its own theme, so it has to be handed
+  // the same choice the page made rather than reading the system on its own.
+  const pref = useThemePref();
+
   return (
     <article>
       <header className="mb-10 border-b border-rule pb-8">
@@ -60,7 +65,7 @@ export default function PostArticle({ title, date, tags, type, Component }: Post
           mapping="pathname"
           reactionsEnabled="0"
           emitMetadata="0"
-          theme="preferred_color_scheme"
+          theme={pref === "system" ? "preferred_color_scheme" : pref}
           loading="lazy"
         />
       </section>

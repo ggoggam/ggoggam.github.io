@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useThemeChange } from "@/lib/theme";
 
 const DEFAULT_MATRIX = [
   [4, -1, 0],
@@ -176,13 +177,8 @@ export function GershgorinCanvas() {
     redraw();
   }, [matrix, redraw]);
 
-  // Redraw when the OS theme flips so the plot follows the ink token.
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => redraw();
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, [redraw]);
+  // Redraw when the theme changes so the plot follows the ink token.
+  useThemeChange(redraw);
 
   useEffect(() => {
     const container = containerRef.current;
