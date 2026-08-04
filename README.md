@@ -19,7 +19,7 @@ This project uses [`bun`](https://bun.sh) as the JavaScript runtime and package 
 # Install dependencies
 bun install
 
-# Start dev server at localhost:3000
+# Start dev server (Vite, http://localhost:5173)
 bun run dev
 
 # Build for production

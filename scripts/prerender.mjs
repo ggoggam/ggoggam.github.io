@@ -22,7 +22,15 @@ function escapeAttr(str) {
 
 const template = fs.readFileSync(path.join(DIST, "index.html"), "utf-8");
 
-async function createPage(routePath, { title, description, type = "website" }) {
+// KaTeX ships as its own async CSS chunk (src/lib/katex-css.ts) so only posts
+// with `math: true` pay for it. Those pages need the <link> in their prerendered
+// head as well, or the math paints unstyled until the chunk arrives.
+const katexCss = fs
+  .readdirSync(path.join(DIST, "assets"))
+  .filter((f) => /^katex-css-.*\.css$/.test(f))
+  .map((f) => `/assets/${f}`)[0];
+
+async function createPage(routePath, { title, description, type = "website", math = false }) {
   const fullTitle = routePath === "/" ? SITE_NAME : `${title} | ${SITE_NAME}`;
   const url = `${SITE_URL}${routePath}`;
 
@@ -34,6 +42,7 @@ async function createPage(routePath, { title, description, type = "website" }) {
     `<meta property="og:type" content="${type}" />`,
     `<meta property="og:site_name" content="${escapeAttr(SITE_NAME)}" />`,
     `<link rel="canonical" href="${url}" />`,
+    ...(math && katexCss ? [`<link rel="stylesheet" href="${katexCss}" />`] : []),
   ].join("\n    ");
 
   // Server-render the route's body so crawlers and no-JS clients get real content.
@@ -68,6 +77,7 @@ function getPosts(type) {
         title: data.title ?? "",
         excerpt: data.excerpt ?? "",
         date: data.date,
+        math: data.math === true,
       };
     })
     .filter(Boolean);
@@ -110,6 +120,7 @@ for (const post of blogPosts) {
     title: post.title,
     description: post.excerpt,
     type: "article",
+    math: post.math,
   });
 }
 
@@ -118,6 +129,7 @@ for (const post of tilPosts) {
     title: post.title,
     description: post.excerpt,
     type: "article",
+    math: post.math,
   });
 }
 

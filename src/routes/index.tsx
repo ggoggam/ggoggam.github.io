@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getRecentPosts } from "@/lib/posts";
-import { AboutFragment } from "@/components/about-fragment";
 import { SchotterCanvas } from "@/components/schotter-canvas";
 import { useSeo } from "@/lib/seo";
 
@@ -14,34 +13,52 @@ function HomePage() {
   useSeo({
     description: "A blog about software engineering, machine learning, and more.",
   });
+
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-2">
-        <SchotterCanvas />
-        <p className="font-light text-sm text-center text-gray-400">
-          A recreation of{" "}
-          <a href="https://collections.vam.ac.uk/item/O221321/schotter-print-nees-georg/">
-            Schotter (1968)
-          </a>{" "}
-          by George Nees. One of the earliest examples of generative art.
+    <div>
+      <header className="mb-12">
+        <h1 className="title-display text-title">Notes on software engineering</h1>
+        <p className="mt-3 max-w-[46ch] text-lede leading-[1.6] text-ink-muted">
+          Long-form posts on problems worked through end to end, and shorter notes on one thing at a
+          time.
         </p>
-      </div>
-      <div>
-        <h2 className="text-2xl font-bold mb-8">Recent</h2>
-        <ul className="space-y-4">
+      </header>
+
+      <section aria-labelledby="recent">
+        <h2 id="recent" className="label mb-1 border-b border-rule pb-4">
+          recent
+        </h2>
+        <ul>
           {posts.map((post) => (
-            <li
-              key={post.slug}
-              className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4"
-            >
-              <time className="text-sm text-gray-400 shrink-0 tabular-nums">{post.date}</time>
-              <Link to={post.url} className="hover:text-gray-600">
-                {post.title}
-              </Link>
+            <li key={post.slug} className="border-b border-rule">
+              <div className="flex flex-col gap-1 py-4 sm:flex-row sm:gap-6">
+                <time className="label shrink-0 pt-[0.3em] sm:w-[6.5rem]" dateTime={post.date}>
+                  {post.date}
+                </time>
+                <Link
+                  to={post.url}
+                  className="title-display min-w-0 flex-1 text-h3 no-underline decoration-rule-strong hover:underline"
+                >
+                  {post.title}
+                </Link>
+                <span className="label shrink-0 pt-[0.4em] text-2xs">{post.type}</span>
+              </div>
             </li>
           ))}
         </ul>
-      </div>
+      </section>
+
+      {/* The plate closes the page rather than opening it: it is the author's
+          signature, not what a first-time reader arrived for. */}
+      <figure className="mt-20 flex flex-col items-center gap-5 border-t border-rule pt-14">
+        <SchotterCanvas />
+        <figcaption className="max-w-[42ch] text-center text-sm leading-relaxed text-ink-muted">
+          <a href="https://collections.vam.ac.uk/item/O221321/schotter-print-nees-georg/">
+            <cite className="not-italic">Schotter</cite>
+          </a>
+          , George Nees, 1968. Redrawn on every visit.
+        </figcaption>
+      </figure>
     </div>
   );
 }

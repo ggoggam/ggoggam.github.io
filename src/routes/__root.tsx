@@ -1,7 +1,6 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import SiteHeader from "@/components/site/site-header";
 import SiteFooter from "@/components/site/site-footer";
-import { NavHoverProvider } from "@/components/site/nav-hover-context";
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -9,12 +8,18 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   return (
-    <NavHoverProvider>
-      <div className="min-h-screen flex flex-col">
-        <header>
+    <>
+      <a
+        href="#content"
+        className="label sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-paper focus:px-3 focus:py-2 focus:no-underline"
+      >
+        skip to content
+      </a>
+      <div className="flex min-h-screen flex-col">
+        <header className="border-b">
           <SiteHeader />
         </header>
-        <main className="max-w-2xl w-full mx-auto px-6 py-8 flex-grow">
+        <main id="content" className="mx-auto w-full max-w-measure flex-grow px-6 py-10 sm:py-14">
           <Outlet />
         </main>
         <footer className="border-t">
@@ -24,6 +29,6 @@ function RootLayout() {
           />
         </footer>
       </div>
-    </NavHoverProvider>
+    </>
   );
 }

@@ -15,6 +15,11 @@ function mulberry32(seed: number) {
   };
 }
 
+function inkColor() {
+  if (typeof window === "undefined") return "#111111";
+  return getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#111111";
+}
+
 function draw(ctx: CanvasRenderingContext2D, w: number, h: number, seed: number) {
   const rand = mulberry32(seed);
 
@@ -36,7 +41,7 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, seed: number)
 
   const squareSize = cellSize * 0.88;
 
-  ctx.strokeStyle = "#1a1a1a";
+  ctx.strokeStyle = inkColor();
   ctx.lineWidth = Math.max(1, w / 600);
 
   for (let row = 0; row < rows; row++) {
@@ -89,6 +94,14 @@ export function SchotterCanvas({ seed: seedProp }: { seed?: number }) {
     redraw();
   }, [seed, redraw]);
 
+  // Redraw when the OS theme flips so the plate follows the ink token.
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => redraw();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [redraw]);
+
   useEffect(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;
@@ -96,8 +109,9 @@ export function SchotterCanvas({ seed: seedProp }: { seed?: number }) {
 
     const observer = new ResizeObserver((entries) => {
       const width = entries[0].contentRect.width;
-      const canvasW = Math.min(width, 500);
-      const canvasH = Math.min(canvasW * 1.45, window.innerHeight * 0.6);
+      // A plate, not a hero: the recent list has to clear the fold behind it.
+      const canvasW = Math.min(width, 320);
+      const canvasH = Math.min(canvasW * 1.45, window.innerHeight * 0.46);
       const dpr = window.devicePixelRatio || 1;
       canvas.width = canvasW * dpr;
       canvas.height = canvasH * dpr;
@@ -116,8 +130,20 @@ export function SchotterCanvas({ seed: seedProp }: { seed?: number }) {
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full flex justify-center">
-      <canvas ref={canvasRef} />
+    // The box is reserved in CSS with the same numbers the ResizeObserver uses,
+    // so the prerendered HTML does not paint a zero-height figure and then jump
+    // once hydration sizes the canvas.
+    <div
+      ref={containerRef}
+      className="flex w-full justify-center"
+      style={{ minHeight: "min(464px, 46vh)" }}
+    >
+      <canvas
+        ref={canvasRef}
+        role="img"
+        aria-label="Schotter: a grid of squares that grows progressively more disordered toward the bottom"
+        style={{ width: "min(100%, 320px)", aspectRatio: "1 / 1.45", maxHeight: "46vh" }}
+      />
     </div>
   );
 }

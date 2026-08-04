@@ -12,51 +12,58 @@ export type PostArticleProps = {
   Component: React.ComponentType<{ components?: MDXComponents }>;
 };
 
-export default function PostArticle({
-  slug: _slug,
-  title,
-  date,
-  tags,
-  type,
-  Component,
-}: PostArticleProps) {
+export default function PostArticle({ title, date, tags, type, Component }: PostArticleProps) {
   return (
     <article>
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">{title}</h1>
-        <time className="text-sm text-gray-400" dateTime={date}>
-          {date}
-        </time>
+      <header className="mb-10 border-b border-rule pb-8">
+        <h1 className="title-display text-title">{title}</h1>
+        {/* Metadata in the mono voice, at full contrast. Kind and date stay on
+            one line; tags get their own so a wrapped separator never leads. */}
+        <div className="mt-4 flex items-baseline gap-x-2">
+          <span className="label label-strong">{type}</span>
+          <span aria-hidden="true" className="label">
+            ·
+          </span>
+          <time className="label" dateTime={date}>
+            {date}
+          </time>
+        </div>
         {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-3">
+          <ul className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
             {tags.map((tag) => (
-              <Link
-                key={tag}
-                to={`/${type}`}
-                search={{ tag }}
-                className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors no-underline"
-              >
-                {tag}
-              </Link>
+              <li key={tag}>
+                <Link
+                  to={`/${type}`}
+                  search={{ tag }}
+                  className="label block px-1 py-1.5 text-2xs tracking-[0.06em] no-underline transition-colors hover:text-ink hover:underline"
+                >
+                  {tag}
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </header>
-      <div className="prose lg:prose-lg mb-12">
+
+      <div className="prose">
         <Component components={mdxComponents} />
       </div>
-      <Giscus
-        id="comments"
-        repo="ggoggam/ggoggam.github.io"
-        repoId="R_kgDOKvkuXQ"
-        category="General"
-        categoryId="DIC_kwDOKvkuXc4Cjadh"
-        mapping="pathname"
-        reactionsEnabled="0"
-        emitMetadata="0"
-        theme="https://blog.ggoggam.dev/giscus-theme.css"
-        loading="lazy"
-      />
+
+      <section aria-label="Comments" className="mt-16 border-t border-rule pt-8">
+        <h2 className="label mb-6">comments</h2>
+        <Giscus
+          id="comments"
+          repo="ggoggam/ggoggam.github.io"
+          repoId="R_kgDOKvkuXQ"
+          category="General"
+          categoryId="DIC_kwDOKvkuXc4Cjadh"
+          mapping="pathname"
+          reactionsEnabled="0"
+          emitMetadata="0"
+          theme="preferred_color_scheme"
+          loading="lazy"
+        />
+      </section>
     </article>
   );
 }

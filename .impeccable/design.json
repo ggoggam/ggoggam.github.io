@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-04T00:00:00Z",
+  "title": "Design System: 꼬깜 (ggoggam)",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Daylight Paper",
+        "canonical": "#fbfbfb",
+        "dark": "#0e0e0e",
+        "tonalRamp": ["#0e0e0e", "#1c1c1c", "#333333", "#555555", "#808080", "#b4b4b4", "#e0e0e0", "#fbfbfb"]
+      },
+      "paper-sunk": {
+        "role": "neutral",
+        "displayName": "Sunk Paper",
+        "canonical": "#f4f4f3",
+        "dark": "#171717",
+        "tonalRamp": ["#111110", "#1f1f1e", "#353534", "#575756", "#828281", "#b6b6b4", "#dcdcda", "#f4f4f3"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Full Ink",
+        "canonical": "#111111",
+        "dark": "#ededed",
+        "tonalRamp": ["#000000", "#111111", "#2b2b2b", "#4a4a4a", "#6f6f6f", "#9c9c9c", "#c9c9c9", "#ededed"]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#5c5c5c",
+        "dark": "#9e9e9e",
+        "contrast": "6.4:1 on paper (light), 7.1:1 (dark) — the floor for any real text",
+        "tonalRamp": ["#1a1a1a", "#2e2e2e", "#454545", "#5c5c5c", "#7d7d7d", "#a3a3a3", "#cccccc", "#f0f0f0"]
+      },
+      "ink-faint": {
+        "role": "neutral",
+        "displayName": "Faint Ink",
+        "canonical": "#8a8a8a",
+        "dark": "#6b6b6b",
+        "contrast": "3.3:1 — rules, list markers, non-text glyphs only",
+        "tonalRamp": ["#242424", "#3b3b3b", "#545454", "#6d6d6d", "#8a8a8a", "#adadad", "#d2d2d2", "#f2f2f2"]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#e3e3e1",
+        "dark": "#262626",
+        "tonalRamp": ["#1a1a19", "#2b2b2a", "#414140", "#5f5f5d", "#8a8a87", "#b6b6b3", "#e3e3e1", "#f7f7f5"]
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Hairline Strong",
+        "canonical": "#c9c9c6",
+        "dark": "#3a3a3a",
+        "tonalRamp": ["#1b1b1a", "#2d2d2c", "#444442", "#61615f", "#8b8b88", "#c9c9c6", "#e2e2df", "#f6f6f4"]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Signal Red",
+        "canonical": "#d93a1e",
+        "dark": "#ff6a4d",
+        "usage": "New-post indicator dot; invalid-input state of the Gershgorin matrix field. Nowhere else.",
+        "tonalRamp": ["#3a0d05", "#5c1509", "#801e0e", "#a52a14", "#d93a1e", "#ef6a4f", "#f79c8a", "#fdd6cd"]
+      },
+      "focus": {
+        "role": "neutral",
+        "displayName": "Focus Ink",
+        "canonical": "#111111",
+        "dark": "#ededed",
+        "tonalRamp": ["#000000", "#111111", "#2b2b2b", "#4a4a4a", "#6f6f6f", "#9c9c9c", "#c9c9c9", "#ededed"]
+      },
+      "plot-1": {
+        "role": "tertiary",
+        "displayName": "Poster Tomato",
+        "canonical": "#d93a1e",
+        "dark": "#ff6a4d",
+        "usage": "Data visualization only — Gershgorin disc overprint.",
+        "tonalRamp": ["#3a0d05", "#5c1509", "#801e0e", "#a52a14", "#d93a1e", "#ef6a4f", "#f79c8a", "#fdd6cd"]
+      },
+      "plot-2": {
+        "role": "tertiary",
+        "displayName": "Poster Blue",
+        "canonical": "#1d4ed8",
+        "dark": "#6f9bff",
+        "usage": "Data visualization only — Gershgorin disc overprint.",
+        "tonalRamp": ["#08133f", "#0d1f66", "#132d92", "#1d4ed8", "#4a77e8", "#7c9df0", "#aec4f6", "#dde7fc"]
+      },
+      "plot-3": {
+        "role": "tertiary",
+        "displayName": "Poster Black",
+        "canonical": "#111111",
+        "dark": "#ededed",
+        "usage": "Data visualization only — Gershgorin disc overprint.",
+        "tonalRamp": ["#000000", "#111111", "#2b2b2b", "#4a4a4a", "#6f6f6f", "#9c9c9c", "#c9c9c9", "#ededed"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The one h1 per page: post title, index title, home statement. Bodoni Moda with variable optical size." },
+      "headline": { "displayName": "Headline", "purpose": "h1/h2 inside prose. 56px above, 16px below, so sections read as grouped." },
+      "title": { "displayName": "Title", "purpose": "Post-row links in every list and h3 in prose. The display face at body size is what makes a list read as a contents page." },
+      "lede": { "displayName": "Lede", "purpose": "Single standfirst paragraph under a page h1, capped at 46ch, in muted ink." },
+      "body": { "displayName": "Body", "purpose": "All prose and all sentence-length copy, capped at the 64ch measure." },
+      "label": { "displayName": "Label", "purpose": "The metadata voice: dates, nav, kind markers, table headers, captions. One to three words only." },
+      "label-micro": { "displayName": "Micro Label", "purpose": "Tags and dense-row kind markers at 11px, where 0.14em tracking would break the word apart." },
+      "wordmark": { "displayName": "Wordmark", "purpose": "꼬깜 only. The one place the body face is set bold; Pretendard is used because it is the only face here that draws Korean." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "link-underline", "value": "text-decoration-color 150ms ease-out, color 150ms ease-out", "purpose": "The only decoration in the system: a hairline underline that darkens to full ink on hover." },
+      { "name": "state-color", "value": "transition-property: color; duration 150ms", "purpose": "Nav, tag, and footer links move between muted and full ink on hover; nothing else changes." },
+      { "name": "disclosure-marker", "value": "transform: rotate(90deg) on [open]", "purpose": "The tag index's fold marker. The only rotation in the build." },
+      { "name": "reduced-motion", "value": "animation-duration: 0.01ms; transition-duration: 0.01ms; scroll-behavior: auto", "purpose": "Global prefers-reduced-motion collapse applied to *, ::before, ::after." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "fluid-min", "value": "375px" },
+      { "name": "fluid-max", "value": "1280px" }
+    ],
+    "focus": {
+      "name": "focus-visible",
+      "value": ":focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 1px; }",
+      "purpose": "One focus token used everywhere; no component defines its own."
+    },
+    "accessibility": {
+      "target": "WCAG 2.2 AA",
+      "minimumInteractiveTarget": "24px, met by padding rather than by a visible box",
+      "headingRule": "One h1 per page type",
+      "codeThemes": "github-light-high-contrast / github-dark-high-contrast, chosen because the standard GitHub themes fall under 4.5:1 on --paper-sunk"
+    }
+  },
+  "components": [
+    {
+      "name": "Nav Link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Lowercase mono section link in the masthead; active state is full ink, not a bar or a background.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary\"><a class=\"ds-nav-link\" href=\"#\">blog</a><a class=\"ds-nav-link ds-nav-link--active\" href=\"#\" aria-current=\"page\">til</a><a class=\"ds-nav-link\" href=\"#\">about</a></nav>",
+      "css": ".ds-nav { display: flex; align-items: baseline; gap: 4px; } .ds-nav-link { font-family: var(--font-mono, \"Spline Sans Mono\", monospace); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted, #5c5c5c); text-decoration: none; padding: 8px; border-radius: 0; transition: color 150ms ease-out; } .ds-nav-link:hover { color: var(--ink, #111111); } .ds-nav-link:focus-visible { outline: 2px solid var(--focus, #111111); outline-offset: 3px; border-radius: 1px; } .ds-nav-link--active { color: var(--ink, #111111); }"
+    },
+    {
+      "name": "Wordmark with New-Post Indicator",
+      "kind": "custom",
+      "refersTo": "new-post-indicator",
+      "description": "The site name in Korean, carrying the system's only use of the accent: a 5px dot when a section has a post from the last month.",
+      "html": "<a class=\"ds-wordmark\" href=\"#\">꼬깜<span class=\"ds-wordmark-dot\" aria-hidden=\"true\"></span><span class=\"ds-sr\"> — new blog post</span></a>",
+      "css": ".ds-wordmark { position: relative; font-family: var(--font-body, \"Pretendard Variable\", sans-serif); font-size: clamp(1.125rem, 1.05rem + 0.32vw, 1.3125rem); font-weight: 700; letter-spacing: -0.025em; color: var(--ink, #111111); text-decoration: none; } .ds-wordmark:focus-visible { outline: 2px solid var(--focus, #111111); outline-offset: 3px; border-radius: 1px; } .ds-wordmark-dot { position: absolute; right: -10px; top: -2px; width: 5px; height: 5px; border-radius: 9999px; background: var(--accent, #d93a1e); } .ds-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }"
+    },
+    {
+      "name": "Post Row",
+      "kind": "card",
+      "refersTo": "post-row",
+      "description": "The list primitive of the whole site: mono date column, display-serif title, hairline divider. No card, no thumbnail, no pill.",
+      "html": "<ul class=\"ds-list\"><li class=\"ds-row\"><time class=\"ds-row-date\" datetime=\"2026-05-14\">2026-05-14</time><div class=\"ds-row-main\"><a class=\"ds-row-title\" href=\"#\">Content-defined chunking for dataset versioning</a><p class=\"ds-row-excerpt\">Why fixed-size blocks defeat deduplication, and what to do instead.</p></div></li></ul>",
+      "css": ".ds-list { list-style: none; margin: 0; padding: 0; } .ds-row { display: flex; flex-direction: row; gap: 24px; align-items: baseline; padding: 20px 0; border-bottom: 1px solid var(--rule, #e3e3e1); } .ds-row-date { flex-shrink: 0; width: 6.5rem; font-family: var(--font-mono, monospace); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted, #5c5c5c); font-feature-settings: \"tnum\" 1; } .ds-row-main { min-width: 0; flex: 1; } .ds-row-title { display: block; font-family: var(--font-display, Georgia, serif); font-weight: 500; font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem); line-height: 1.04; letter-spacing: -0.02em; color: var(--ink, #111111); text-decoration: none; } .ds-row-title:hover { text-decoration: underline; text-decoration-color: var(--rule-strong, #c9c9c6); text-underline-offset: 0.18em; } .ds-row-title:focus-visible { outline: 2px solid var(--focus, #111111); outline-offset: 3px; border-radius: 1px; } .ds-row-excerpt { margin: 4px 0 0; font-family: var(--font-body, sans-serif); font-size: 0.8125rem; line-height: 1.625; color: var(--ink-muted, #5c5c5c); }"
+    },
+    {
+      "name": "Tag Filter",
+      "kind": "chip",
+      "refersTo": "tag-filter",
+      "description": "A tag is microtype, not a chip: no background, no border, no radius. Selection is full ink plus an underline.",
+      "html": "<div class=\"ds-tags\"><button class=\"ds-tag ds-tag--on\" type=\"button\" aria-pressed=\"true\">all</button><button class=\"ds-tag\" type=\"button\" aria-pressed=\"false\">rust</button><button class=\"ds-tag\" type=\"button\" aria-pressed=\"false\">infra</button></div>",
+      "css": ".ds-tags { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; } .ds-tag { font-family: var(--font-mono, monospace); font-size: 0.6875rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted, #5c5c5c); background: none; border: 0; border-radius: 0; padding: 4px; cursor: pointer; transition: color 150ms ease-out; } .ds-tag:hover { color: var(--ink, #111111); } .ds-tag:focus-visible { outline: 2px solid var(--focus, #111111); outline-offset: 3px; border-radius: 1px; } .ds-tag--on { color: var(--ink, #111111); text-decoration: underline; text-underline-offset: 0.18em; }"
+    },
+    {
+      "name": "Label",
+      "kind": "custom",
+      "refersTo": "nav-link",
+      "description": "The metadata voice itself: mono, uppercase, 0.14em, muted ink at full contrast. One to three words only.",
+      "html": "<p><span class=\"ds-label ds-label--strong\">til</span> <span class=\"ds-label\" aria-hidden=\"true\">·</span> <time class=\"ds-label\" datetime=\"2026-05-14\">2026-05-14</time></p>",
+      "css": ".ds-label { font-family: var(--font-mono, monospace); font-size: 0.75rem; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted, #5c5c5c); font-feature-settings: \"tnum\" 1; } .ds-label--strong { color: var(--ink, #111111); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "The build's one text field: sunk paper, hairline border, 2px radius, mono. Invalid swaps the border and message to the accent.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-in\">matrix</label><input class=\"ds-input\" id=\"ds-in\" type=\"text\" value=\"[[1,2],[3,4]]\" spellcheck=\"false\" /><p class=\"ds-field-error\" role=\"alert\">Must be a square JSON array of numbers</p></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; } .ds-field-label { font-family: var(--font-mono, monospace); font-size: 0.6875rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted, #5c5c5c); } .ds-input { width: 100%; background: var(--paper-sunk, #f4f4f3); color: var(--ink, #111111); border: 1px solid var(--rule, #e3e3e1); border-radius: 2px; padding: 8px 12px; font-family: var(--font-mono, monospace); font-size: 0.8125rem; transition: border-color 150ms ease-out; } .ds-input:focus-visible { outline: 2px solid var(--focus, #111111); outline-offset: 3px; } .ds-input[aria-invalid=\"true\"] { border-color: var(--accent, #d93a1e); } .ds-field-error { margin: 0; font-family: var(--font-mono, monospace); font-size: 0.75rem; color: var(--accent, #d93a1e); }"
+    },
+    {
+      "name": "Code Block",
+      "kind": "custom",
+      "refersTo": "code-block",
+      "description": "Sunk paper inside a hairline with a mono line-number gutter at the text contrast floor. Depth without a shadow.",
+      "html": "<pre class=\"ds-pre\"><code><span class=\"ds-line\">const measure = \"64ch\";</span><span class=\"ds-line\">document.body.style.maxWidth = measure;</span></code></pre>",
+      "css": ".ds-pre { background: var(--paper-sunk, #f4f4f3); border: 1px solid var(--rule, #e3e3e1); border-radius: 4px; padding: 16px 0; margin: 28px 0; overflow-x: auto; font-family: var(--font-mono, monospace); font-size: 0.8125rem; line-height: 1.7; color: var(--ink, #111111); scrollbar-width: thin; scrollbar-color: var(--rule-strong, #c9c9c6) transparent; } .ds-pre code { display: grid; counter-reset: line; background: none; border: 0; padding: 0; } .ds-line { padding: 0 16px; counter-increment: line; } .ds-line::before { content: counter(line); display: inline-block; width: 1.4rem; margin-right: 16px; text-align: right; color: var(--ink-muted, #5c5c5c); user-select: none; font-size: 0.85em; }"
+    },
+    {
+      "name": "Prose Link",
+      "kind": "custom",
+      "refersTo": "post-row",
+      "description": "The only decoration in the system: a hairline underline in rule-strong that darkens to full ink on hover.",
+      "html": "<p class=\"ds-prose\">Everything ships as prerendered HTML plus <a class=\"ds-link\" href=\"#\">assets in public/</a>.</p>",
+      "css": ".ds-prose { font-family: var(--font-body, sans-serif); font-size: clamp(1rem, 0.96rem + 0.18vw, 1.125rem); line-height: 1.72; color: var(--ink, #111111); max-width: 64ch; } .ds-link { color: inherit; text-decoration: underline; text-decoration-color: var(--rule-strong, #c9c9c6); text-decoration-thickness: 1px; text-underline-offset: 0.18em; transition: text-decoration-color 150ms ease-out, color 150ms ease-out; } .ds-link:hover { text-decoration-color: var(--ink, #111111); } .ds-link:focus-visible { outline: 2px solid var(--focus, #111111); outline-offset: 3px; border-radius: 1px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Ruled Notebook",
+    "overview": "This is a reading surface built out of paper, ink, and one hairline. Nothing is boxed, nothing is filled, nothing is lifted. Hierarchy is carried entirely by typographic register — a didone serif for what is being read, a tracked uppercase mono for what is being read about — and by a single 1px rule that separates rows, headers, and footers. There is no card, no pill, no chip, and no shadow anywhere in the build; a grep across src/ and globals.css returns zero box-shadow declarations and zero background-filled metadata.\n\nThe density is editorial rather than app-like. One measure (64ch, tuned by counting rendered characters-per-line at ~72) governs the header, the main column, and the footer alike, so the page reads as one column of set text with rules across it rather than as a shell containing content. Type is fluid per role — every step is a clamp() travelling between a 375px and a 1280px viewport — so nothing snaps at a breakpoint. Light and dark are peer themes declared through prefers-color-scheme and color-scheme, not a toggle bolted onto a light design.\n\nThe confirmed rejection is the Tailwind-blog default: gray pills for tags, bold sans headings, and metadata faded until it fails contrast. The system's answer to all three is the same move — metadata recedes by register (small, mono, uppercase, tracked) while staying at full contrast, never by dropping toward the background.",
+    "keyCharacteristics": [
+      "Near-white paper / near-black ink; a single accent that is nearly absent.",
+      "One hairline weight (1px) in two strengths; zero shadows, zero filled chips.",
+      "Three type roles — didone display, mono label, Pretendard body — where the body face also backs the other two stacks because it is the only one that draws Korean.",
+      "Fluid clamp() scale per role, 375px → 1280px, no breakpoint steps.",
+      "One 64ch measure shared by header, content, and footer.",
+      "Contrast floor enforced by token: --ink-muted is the least any real text may be."
+    ],
+    "rules": [
+      { "name": "The One Red Rule", "body": "Red is a state, never a decoration. It is allowed on exactly two things in the shipped build: the new-post indicator dot and the invalid-input state of the Gershgorin matrix field. It never appears on links, buttons, headings, tags, or hovers. If a new surface wants red for emphasis, the answer is the display face, not the accent.", "section": "colors" },
+      { "name": "The Contrast Floor Rule", "body": "--ink-muted is the darkest a piece of real text is ever allowed to get. --ink-faint is reserved for rules, list markers, and non-text glyphs. Metadata recedes by typographic register — smaller, mono, uppercase, tracked — never by moving toward the background.", "section": "colors" },
+      { "name": "The Data-Ink Rule", "body": "The --plot-* group is scoped to data visualization. It is not a UI palette; no button, badge, link, or heading may draw from it.", "section": "colors" },
+      { "name": "The Three Voices Rule", "body": "Display serif announces, mono annotates, Pretendard reads. A piece of text picks exactly one. There is no bold-sans heading anywhere in this system.", "section": "typography" },
+      { "name": "The Label Length Rule", "body": "The label voice is for one to three words. Sentence-length copy — excerpts, ledes, descriptions, captions — stays in the body face at --ink-muted, because 0.14em tracking on a sentence stops being a label and starts being unreadable.", "section": "typography" },
+      { "name": "The Measure Rule", "body": "64ch (--measure) is the width of the site, not just of the prose. Header, main, and footer all share it, so the hairlines line up top to bottom.", "section": "typography" },
+      { "name": "The No-Lift Rule", "body": "Nothing in this system casts a shadow, and nothing moves on the z-axis. If an element needs to read as separate, give it a hairline or the sunk paper tone. If it needs to read as active, give it full ink.", "section": "elevation" },
+      { "name": "The One Hairline Rule", "body": "There is exactly one border weight in the system: 1px. Emphasis is a change of color (--rule → --rule-strong → --ink), never of thickness.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do express metadata as .label — 12px Spline Sans Mono, uppercase, 0.14em, --ink-muted, tabular figures — and mark the active one with label-strong.",
+      "Do set every title and heading in the display face via .title-display (Bodoni Moda 500, −0.02em, 1.04, balanced wrap).",
+      "Do separate things with a 1px hairline in --rule, escalating to --rule-strong and then --ink for emphasis.",
+      "Do keep every column inside the shared 64ch --measure, with a 24px gutter.",
+      "Do give interactive text at least 24px of hit area through padding, and leave the padding invisible.",
+      "Do use the one :focus-visible token everywhere: 2px solid --focus, 3px offset, 1px radius.",
+      "Do read colors from CSS custom properties at draw time in canvas work, so both themes are served by one code path.",
+      "Do state dates as ISO yyyy-MM-dd in the mono voice with tnum on, so columns of dates align."
+    ],
+    "donts": [
+      "Don't add a shadow. There are none in the build, and depth is a hairline or the sunk paper tone.",
+      "Don't put a filled background behind a tag, kind marker, date, or status word. Tags are microtype, not chips.",
+      "Don't set a heading in a bold sans. The display serif is the only heading voice.",
+      "Don't drop text below --ink-muted to make it recede; change its register instead. --ink-faint is for rules, markers, and non-text only.",
+      "Don't spend the accent on anything but the new-post indicator and a genuine invalid state.",
+      "Don't pull --plot-1/2/3 into UI chrome; they exist to separate overlapping data and nothing else.",
+      "Don't apply .label to sentence-length copy — one to three words is the limit of the tracked voice.",
+      "Don't introduce a second border weight or a general-purpose corner radius; square is the default and radius is reserved for depicted objects.",
+      "Don't re-enable @tailwindcss/typography; .prose is hand-authored so no upstream defaults can leak past these tokens."
+    ]
+  }
+}
