@@ -1,7 +1,9 @@
 import Giscus from "@giscus/react";
 import { Link } from "@tanstack/react-router";
 import type { MDXComponents } from "mdx/types";
+import { useRef } from "react";
 import { mdxComponents } from "@/components/mdx-component";
+import ReferencePeek from "@/components/post/reference-peek";
 import { useThemePref } from "@/lib/theme";
 
 export type PostArticleProps = {
@@ -13,13 +15,23 @@ export type PostArticleProps = {
   Component: React.ComponentType<{ components?: MDXComponents }>;
 };
 
-export default function PostArticle({ title, date, tags, type, Component }: PostArticleProps) {
+export default function PostArticle({
+  slug,
+  title,
+  date,
+  tags,
+  type,
+  Component,
+}: PostArticleProps) {
   // The comment thread is an iframe with its own theme, so it has to be handed
   // the same choice the page made rather than reading the system on its own.
   const pref = useThemePref();
+  // The peek reads the footnote list out of this subtree and measures the
+  // column against it, so it needs the article box, not the prose box.
+  const articleRef = useRef<HTMLElement>(null);
 
   return (
-    <article>
+    <article ref={articleRef}>
       <header className="mb-10 border-b border-rule pb-8">
         <h1 className="title-display text-title">{title}</h1>
         {/* Metadata in the mono voice, at full contrast. Kind and date stay on
@@ -53,6 +65,11 @@ export default function PostArticle({ title, date, tags, type, Component }: Post
       <div className="prose">
         <Component components={mdxComponents} />
       </div>
+
+      {/* Keyed to the slug: moving between two posts reuses this component, so
+          without it the peek would keep listening to the previous post's
+          markers, which are no longer in the document. */}
+      <ReferencePeek key={slug} containerRef={articleRef} />
 
       <section aria-label="Comments" className="mt-16 border-t border-rule pt-8">
         <h2 className="label mb-6">comments</h2>

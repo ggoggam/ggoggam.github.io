@@ -340,6 +340,45 @@ radius, 13px mono at 1.7, horizontal scroll with a `--rule-strong` thumb. Line
 numbers are generated content but are still text a reader parses, so they sit at
 `--ink-muted`, not `--ink-faint`, and can be switched off per block.
 
+### Reference Peek
+
+Hovering a footnote marker pulls that reference out of the list at the foot of
+the article and sets it beside the line it belongs to. The card is the system's
+usual construction — paper ground, one 1px `--rule-strong` hairline, square, 14px
+padding, body copy one step down at `--text-sm`, the number above it in the mono
+label voice. A reference may carry an image; it is a 12rem thumbnail in the list
+below and full card width in the peek.
+
+The connection back to the word is drawn, not implied: a dashed `--rule-strong`
+hairline across the viewport and another down it, crossing at the marker's
+trailing edge, with a 5px full-ink register mark at the crossing and the
+coordinate called out in mono at the far left of the leader line — out in the
+gutter, where it cannot land on prose. Dashed distinguishes a measurement from a
+rule the page owns, and the register mark is the one place in the overlay that
+goes to full ink.
+
+Placement follows the room available. Beyond about 1200px the gutter beside the
+64ch column takes a 220–300px card; between that and 640px the card floats under
+the marker at 300px; below 640px it spans the measure itself, so its edges line
+up with the text it interrupts. The coordinate readout needs 96px of clear left
+margin and simply does not appear when there is less.
+
+A pointer opens the card by hovering. A finger opens it by tapping, which takes
+over the marker's jump — that jump is the exact thing that costs a phone reader
+their place, and the card replaces it with the same reference in situ. Because
+tapping is then the only way in, the two modes have different contracts. The
+hover card is decoration over a link that already works, so it is `aria-hidden`.
+The tap card is the thing itself: `role="dialog"`, labelled by its reference
+number, focused on open, dismissed by its own close control, by a tap outside,
+or by Escape, with focus handed back to the marker. The marker carries
+`aria-expanded` while it is open, and if the reference cannot be read the tap is
+left alone and the link jumps as before.
+
+Touch also changes the marker. With no hover to discover the affordance, the
+dotted underline is permanent under `(pointer: coarse)`, and an `::after`
+overlay inset −0.7rem/−0.55rem lifts a 7.6×10px superscript over the 24px target
+minimum without moving anything in the line box.
+
 ### Generative Plates
 
 Two canvases carry the site's only imagery: a Schotter homage that opens the
@@ -371,4 +410,5 @@ system permits more than one hue at a time.
 - **Don't** pull `--plot-1/2/3` into UI chrome; they exist to separate overlapping data and nothing else.
 - **Don't** apply `.label` to sentence-length copy — one to three words is the limit of the tracked voice.
 - **Don't** introduce a second border weight or a general-purpose corner radius; square is the default and radius is reserved for depicted objects.
+- **Don't** make a hover the only route to something. The reference peek is a shortcut to a footnote list that is still there, still linked, and still complete without it.
 - **Don't** re-enable `@tailwindcss/typography`; `.prose` is hand-authored so no upstream defaults can leak past these tokens.
