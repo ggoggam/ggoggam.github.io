@@ -1,5 +1,6 @@
 import type { MDXComponents } from "mdx/types";
 import { useState } from "react";
+import { describeLink, previewLabel } from "@/lib/link-preview";
 
 function CopyLinkButton({ id }: { id: string }) {
   const [copied, setCopied] = useState(false);
@@ -95,17 +96,39 @@ export const mdxComponents: MDXComponents = {
   li: (props) => <li className="leading-[1.72] pl-1" {...props} />,
   a: ({ href, children, ...props }) => {
     const isInternal = href?.startsWith("/") || href?.startsWith("#");
-    if (isInternal) {
-      return (
-        <a href={href} {...props}>
-          {children}
-        </a>
-      );
-    }
-    return (
+    const link = isInternal ? (
+      <a href={href} {...props}>
+        {children}
+      </a>
+    ) : (
       <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
         {children}
       </a>
+    );
+
+    // A pointer previews a link by hovering it. A finger has no equivalent —
+    // and taking over the tap is not an option here the way it is on a footnote
+    // marker, because tapping a link should go there. So a touch reader gets a
+    // second, smaller target of its own: an asterisk that opens the preview and
+    // leaves the link alone. It stays hidden until the peek marks the article
+    // ready, so it is never an inert glyph on a page without JavaScript.
+    const preview =
+      props["data-footnote-ref"] || props["data-footnote-backref"] ? null : describeLink(href);
+    if (!preview) return link;
+
+    return (
+      <>
+        {link}
+        <button
+          type="button"
+          className="peek-marker"
+          data-peek-marker=""
+          data-peek-href={href}
+          aria-label={previewLabel(preview)}
+        >
+          *
+        </button>
+      </>
     );
   },
   img: ({ src, alt, ...props }) => <img src={src} alt={alt || ""} loading="lazy" {...props} />,
