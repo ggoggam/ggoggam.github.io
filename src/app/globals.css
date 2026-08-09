@@ -335,55 +335,63 @@
   inset: 0;
   z-index: 30;
   pointer-events: none;
-  animation: peek-in 150ms ease-out both;
 }
 
-@keyframes peek-in {
-  from {
+/* Both parts arrive and leave the same way, and by transition rather than by
+   animation: `@starting-style` gives a mounting node somewhere to come from, and
+   the same declaration then carries it back out when the component holds it
+   through the fade. Where `@starting-style` is not understood the overlay simply
+   appears, which is what it did before any of this. */
+.peek-plot,
+.peek-card {
+  opacity: 1;
+  transition: opacity 150ms ease-out;
+}
+
+@starting-style {
+  .peek-plot,
+  .peek-card {
     opacity: 0;
   }
-  to {
-    opacity: 1;
-  }
 }
 
-/* Two hairlines that find the word. Dashed so they read as measurement rather
-   than as a rule the page owns. */
-.peek-cross {
+.peek[data-leaving="true"] .peek-plot,
+.peek[data-leaving="true"] .peek-card {
+  opacity: 0;
+}
+
+/* The drawn layer: the outline around the words, the square riding its border,
+   and the leader back to the card. Viewport coordinates, so it is placed in the
+   same space the measurements are taken in. */
+.peek-plot {
   position: absolute;
-  left: 0;
+  inset: 0;
   width: 100%;
-  border-top: 1px dashed var(--rule-strong);
-}
-
-.peek-cross--v {
-  top: 0;
-  left: auto;
-  width: 0;
   height: 100%;
-  border-top: 0;
-  border-left: 1px dashed var(--rule-strong);
+  overflow: visible;
 }
 
-/* The register mark is the one place the crosshair goes to full ink — it marks
-   the exact word, so it has to be the darkest thing in the overlay. */
-.peek-mark {
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  margin: -3px 0 0 -3px;
-  background: var(--ink);
+/* A hairline box, not a highlight — it measures the reference rather than
+   colouring it. */
+.peek-box {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-width: 1;
 }
 
-.peek-readout {
-  position: absolute;
-  left: 1.25rem;
-  transform: translateY(-0.4rem);
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  font-feature-settings: "tnum" 1;
-  color: var(--ink-faint);
-  white-space: nowrap;
+/* The one mark that carries the hand: paper-filled and ink-drawn, so it stays
+   legible over prose, and the darkest thing in the overlay. */
+.peek-handle {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+/* Solid, and the only solid line here — it is the one thing asserting that the
+   card and the words belong together. */
+.peek-lead {
+  stroke: var(--ink-faint);
+  stroke-width: 1;
 }
 
 .peek-card {

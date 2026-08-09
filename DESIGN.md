@@ -375,24 +375,60 @@ coordinates over text that already exists and survives reflow on its own. Where
 the API is missing the underline simply does not appear and nothing else
 changes.
 
-The connection back to the word is drawn, not implied: a dashed `--rule-strong`
-hairline across the viewport and another down it, crossing at the marker's
-trailing edge, with a 5px full-ink register mark at the crossing and the
-coordinate called out in mono at the far left of the leader line — out in the
-gutter, where it cannot land on prose. Dashed distinguishes a measurement from a
-rule the page owns, and the register mark is the one place in the overlay that
-goes to full ink.
+The connection back to the word is drawn, not implied, and it arrives in two
+stages. Reaching the reference — anywhere on the underlined phrase, or within
+5px of it — draws a 1px `--rule-strong` rectangle around the words, one per line
+where the phrase wraps, with the superscript folded into the line it hangs off
+rather than boxed on its own. A 7px square rides that border, filled `--paper`
+and stroked `--ink` so it stays legible over prose; it is the one mark in the
+overlay that goes to full ink, and it tracks the hand at frame rate. Staying
+draws the card, and a solid `--ink-faint` line from the square to the card's
+nearest corner — the only solid line in the overlay, because it is the one thing
+asserting the two belong together. The square keeps moving after the card lands;
+the leader pivots with it.
 
-Placement follows the room available. Beyond about 1200px the gutter beside the
-64ch column takes a 220–300px card; between that and 640px the card floats under
-the marker at 300px; below 640px it spans the measure itself, so its edges line
-up with the text it interrupts. The coordinate readout needs 96px of clear left
-margin and simply does not appear when there is less.
+Two rules keep that line off the words. The card is never allowed to cover the
+reference — if placement lands it there it is moved clear of the whole of it,
+under by preference and over when there is no room below. And the square departs
+from the side of the box the card is actually on, holding the hand's position
+along that side rather than taking the nearest edge, so the line leaves the
+outline and never re-enters it. Where a phrase wraps, every line offers a
+departure point and the one that wins is a clear run to the card; among clear
+runs, the one nearest the hand.
 
-A pointer opens the card by hovering — quickly on a footnote marker, which is a
-deliberate target, and after 320ms on a link, which prose is full of and a
-pointer often only crosses. A finger opens a footnote card by tapping, which takes
-over the marker's jump — that jump is the exact thing that costs a phone reader
+Placement follows the hand, and keeps following it. On a pointer the card sits
+26px right and 22px below the cursor at up to 300px wide, flipping to the other
+side of either axis rather than running off the viewport, and it goes on moving
+with the cursor anywhere within 80px of the reference. The radius is the point: a
+line of text is 25px tall, so a card that only tracked while the pointer was on
+the words would stop the instant the hand moved at all. Two things stop it —
+drifting past that radius, which means the reader is on their way to the card,
+and reaching the card, which a card that kept moving could never allow. What is
+kept between frames is the offset from the words rather than the point, so the
+card also rides its own line when the page scrolls. Below 640px it spans the
+measure itself and sits under the line, so its edges line up with the text it
+interrupts.
+
+Both parts fade rather than blink, 150ms each way, and by transition rather than
+animation: `@starting-style` gives a mounting node somewhere to come from, and
+the same declaration carries it back out. Leaving is the harder half — an overlay
+cannot fade after React has taken its nodes away — so a dismissed peek is held
+mounted for the length of its own fade, holding still while it goes, with
+everything else already treating it as gone.
+
+Opening asks the pointer to be on the words; keeping the card open asks far less.
+Once it is up it is something the reader went and got, and it survives anywhere
+within 200px of either the reference or the card — which between them cover the
+whole route from one to the other — rather than closing the moment the hand
+drifts off the line. Before the card there is nothing to protect, so the outline
+is a light touch that tracks the pointer exactly and goes when it does.
+
+A pointer opens the card by hovering — 90ms on a footnote, which the reader
+reached by crossing its underline on purpose, and 320ms on a link, which prose is
+full of and a pointer often only crosses. A link inside a cited phrase keeps the
+pointer for exactly as long as it is under it; the phrase takes over the moment
+it is not. A finger opens a footnote card by tapping, which takes over the
+marker's jump — that jump is the exact thing that costs a phone reader
 their place, and the card replaces it with the same reference in situ. Because
 tapping is then the only way in, the two modes have different contracts. The
 hover card is decoration over a link that already works, so it is `aria-hidden`.
