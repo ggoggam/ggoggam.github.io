@@ -387,9 +387,14 @@ line from the square to the card's nearest corner — the only solid line in the
 overlay, because it is the one thing asserting the two belong together. The
 square keeps moving after the card lands; the leader pivots with it.
 
-Placement follows the hand. On a pointer the card sits 26px right and 22px below
-the cursor at up to 300px wide, flipping to the other side of either axis rather
-than running off the viewport, and it holds its offset from the words as the
+Placement follows the hand, and keeps following it. On a pointer the card sits
+26px right and 22px below the cursor at up to 300px wide, flipping to the other
+side of either axis rather than running off the viewport, and it moves with the
+cursor for as long as the cursor is on the reference — which is the whole time
+the reader is looking at the words rather than at the card. Leaving the outline
+stops it: the reader is on their way to the card by then, and a card that keeps
+moving is a card you cannot reach. What is kept between frames is the offset from
+the words rather than the point, so the card also rides its own line when the
 page scrolls. Below 640px it spans the measure itself and sits under the line, so
 its edges line up with the text it interrupts.
 
