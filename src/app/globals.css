@@ -455,7 +455,7 @@
 
 .peek-body :where(pre) {
   margin: 0.6rem 0;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
 }
 
 /* A post on this site previews as the post: its title in the announcing voice,
