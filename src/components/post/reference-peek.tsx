@@ -2,26 +2,31 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
 } from "react";
 import { createPortal } from "react-dom";
+import { citedPhrase, supportsHighlights } from "@/lib/cited-phrase";
+import { getBlogPosts, getTILPosts, type PostMeta } from "@/lib/posts";
 
-/* Reaching a footnote pulls the reference itself up beside the line it belongs
-   to, instead of throwing the reader to the bottom of the article. The footnote
-   list down there is still the source of truth — this reads from it — so nothing
-   here changes what a reader without JavaScript gets. It is a shortcut, not a
-   second copy.
+/* Reaching a reference pulls it up beside the line that cites it, instead of
+   sending the reader somewhere else to find it. Two things count as a
+   reference: a footnote marker, whose text is read out of the list at the foot
+   of the article, and a link, whose destination is described from what the site
+   already knows. Neither is a second copy of anything — the footnote list is
+   still there and still complete, and the link still goes where it always did.
 
-   A pointer opens it by hovering; a finger opens it by tapping, which is worth
-   the hijacked link because the jump it replaces is exactly the thing that costs
-   a phone reader their place. Because the tap route is the only way in on touch,
-   that card is a real dialog — focused, labelled, closable — while the hover
-   card stays `aria-hidden` decoration over a link that already works.
+   A pointer opens a card by hovering; a finger opens a footnote card by
+   tapping, which is worth the hijacked marker because the jump it replaces is
+   exactly what costs a phone reader their place. Links are left alone on touch:
+   tapping one should go there. Because the tap route is the only way into a
+   footnote on touch, that card is a real dialog — focused, labelled, closable —
+   while the hover card stays `aria-hidden` decoration over a working link.
 
    Three placements, by the room available: out in the gutter beside the 64ch
-   column, floating under the marker, or spanning the column on a phone. */
+   column, floating under the anchor, or spanning the column on a phone. */
 
 const CARD_MAX = 300;
 const CARD_MIN = 220;
@@ -31,8 +36,14 @@ const EDGE_PAD = 20;
    the prose, so it simply does not appear. */
 const READOUT_ROOM = 96;
 const COLUMN_BREAK = 640;
-const OPEN_DELAY = 90;
+/* A footnote marker is a deliberate target and opens quickly. Prose is full of
+   links a pointer only crosses on its way somewhere, so those wait. */
+const FOOTNOTE_DELAY = 90;
+const LINK_DELAY = 320;
 const CLOSE_DELAY = 160;
+
+const RESTING_HIGHLIGHT = "cited-phrase";
+const ACTIVE_HIGHLIGHT = "cited-phrase-live";
 
 const FINE_POINTER = "(hover: hover) and (pointer: fine)";
 let pointerQuery: MediaQueryList | null = null;
@@ -43,10 +54,14 @@ const subscribePointer = (onChange: () => void) => {
   return () => query.removeEventListener("change", onChange);
 };
 
+type Source =
+  | { kind: "footnote"; label: string; html: string }
+  | { kind: "post"; label: string; post: PostMeta }
+  | { kind: "link"; label: string; host: string; path: string };
+
 type Peek = {
   anchor: HTMLAnchorElement;
-  html: string;
-  index: string;
+  source: Source;
   via: "hover" | "tap";
 };
 
@@ -61,19 +76,49 @@ type Frame = {
 };
 
 /** The footnote's own text, minus the ↩ backref, which is meaningless here. */
-function readFootnote(root: HTMLElement, href: string): string | null {
+function readFootnote(root: HTMLElement, marker: HTMLAnchorElement): Source | null {
+  const href = marker.hash;
   const id = decodeURIComponent(href.slice(href.indexOf("#") + 1));
   const source = root.querySelector(`[id="${CSS.escape(id)}"]`);
   if (!source) return null;
   const clone = source.cloneNode(true) as HTMLElement;
   clone.querySelectorAll("[data-footnote-backref]").forEach((el) => el.remove());
-  return clone.innerHTML;
+  return { kind: "footnote", label: marker.textContent ?? "", html: clone.innerHTML };
 }
 
-/* The crosshair registers on the marker's trailing edge rather than its centre,
-   so the mark sits beside the digit instead of on top of it. */
+/** What a link can honestly promise before you follow it: for a post on this
+    site, the post; for anywhere else, the destination, spelled out. */
+function readLink(anchor: HTMLAnchorElement, posts: Map<string, PostMeta>): Source | null {
+  const href = anchor.getAttribute("href") ?? "";
+  if (!href || href.startsWith("#")) return null;
+
+  if (href.startsWith("/")) {
+    const post = posts.get(href.replace(/\/$/, ""));
+    // An internal link that is not a post — /about, an index — describes itself
+    // well enough in its own text. Only a post has anything to preview.
+    return post ? { kind: "post", label: post.type, post } : null;
+  }
+
+  try {
+    const url = new URL(href);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return {
+      kind: "link",
+      label: "external",
+      host: url.host.replace(/^www\./, ""),
+      path: `${url.pathname}${url.search}${url.hash}`.replace(/^\/$/, ""),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/* The crosshair registers on the anchor's trailing edge rather than its centre,
+   so the mark sits beside the digit instead of on top of it. A link that wraps
+   across lines is measured on its last one, where it actually ends. */
 function anchorPoint(el: HTMLElement) {
-  const r = el.getBoundingClientRect();
+  const rects = el.getClientRects();
+  const r = rects.length ? rects[rects.length - 1] : el.getBoundingClientRect();
   return { x: r.right, y: r.top + r.height / 2 };
 }
 
@@ -95,17 +140,22 @@ export default function ReferencePeek({
   containerRef: React.RefObject<HTMLElement | null>;
 }) {
   // Not a one-off read: a tablet gains and loses a trackpad mid-session, and the
-  // markers have to be rewired for the other interaction when it does.
+  // anchors have to be rewired for the other interaction when it does.
   const finePointer = useSyncExternalStore(
     subscribePointer,
     () => getPointerQuery().matches,
     () => true
   );
 
+  const posts = useMemo(
+    () => new Map([...getBlogPosts(), ...getTILPosts()].map((p) => [p.url, p])),
+    []
+  );
   const [peek, setPeek] = useState<Peek | null>(null);
   const [frame, setFrame] = useState<Frame | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const peekRef = useRef<Peek | null>(null);
+  const phrasesRef = useRef(new Map<HTMLElement, Range>());
   const focusedFor = useRef<Peek | null>(null);
   const openTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -121,7 +171,7 @@ export default function ReferencePeek({
 
   const dismiss = useCallback(() => {
     const current = peekRef.current;
-    // Hand focus back to the marker, but only if it is ours to hand back —
+    // Hand focus back to the anchor, but only if it is ours to hand back —
     // a tap somewhere else has already moved it on purpose.
     if (current?.via === "tap" && cardRef.current?.contains(document.activeElement)) {
       current.anchor.focus({ preventScroll: true });
@@ -137,7 +187,38 @@ export default function ReferencePeek({
 
   const hold = useCallback(() => clearTimeout(closeTimer.current), []);
 
-  /* Wire every footnote marker in the article, one way or the other. */
+  /* Underline the words each footnote annotates, so a reader can see what
+     carries a reference without hunting for superscripts. */
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root || !supportsHighlights()) return;
+
+    const phrases = phrasesRef.current;
+    phrases.clear();
+    root.querySelectorAll<HTMLAnchorElement>("a[data-footnote-ref]").forEach((marker) => {
+      const range = citedPhrase(marker.closest("sup") ?? marker);
+      if (range) phrases.set(marker, range);
+    });
+    CSS.highlights.set(RESTING_HIGHLIGHT, new Highlight(...phrases.values()));
+
+    return () => {
+      CSS.highlights.delete(RESTING_HIGHLIGHT);
+      CSS.highlights.delete(ACTIVE_HIGHLIGHT);
+      phrases.clear();
+    };
+  }, [containerRef]);
+
+  /* The phrase behind the open card goes to full ink, the way its marker does. */
+  useEffect(() => {
+    const range = peek && phrasesRef.current.get(peek.anchor);
+    if (!range || !supportsHighlights()) return;
+    CSS.highlights.set(ACTIVE_HIGHLIGHT, new Highlight(range));
+    return () => {
+      CSS.highlights.delete(ACTIVE_HIGHLIGHT);
+    };
+  }, [peek]);
+
+  /* Wire every anchor in the article, one way or the other. */
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
@@ -146,24 +227,36 @@ export default function ReferencePeek({
       root.querySelectorAll<HTMLAnchorElement>("a[data-footnote-ref]")
     ).filter((a) => a.hash);
 
-    const read = (anchor: HTMLAnchorElement, via: Peek["via"]) => {
-      const html = readFootnote(root, anchor.hash);
-      if (!html) return false;
-      setPeek({ anchor, html, index: anchor.textContent ?? "", via });
+    const links = Array.from(root.querySelectorAll<HTMLAnchorElement>(".prose a[href]")).filter(
+      (a) =>
+        !a.hasAttribute("data-footnote-ref") &&
+        !a.hasAttribute("data-footnote-backref") &&
+        // The self-link on a heading points at the heading it is already in.
+        !a.closest("h1, h2, h3, h4, h5, h6")
+    );
+
+    const show = (anchor: HTMLAnchorElement, source: Source | null, via: Peek["via"]) => {
+      if (!source) return false;
+      setPeek({ anchor, source, via });
       return true;
     };
 
     const enter = (event: Event) => {
       const anchor = event.currentTarget as HTMLAnchorElement;
+      const footnote = anchor.hasAttribute("data-footnote-ref");
       clearTimers();
-      openTimer.current = setTimeout(() => read(anchor, "hover"), OPEN_DELAY);
+      openTimer.current = setTimeout(
+        () =>
+          show(anchor, footnote ? readFootnote(root, anchor) : readLink(anchor, posts), "hover"),
+        footnote ? FOOTNOTE_DELAY : LINK_DELAY
+      );
     };
 
     const focus = (event: Event) => {
       const anchor = event.currentTarget as HTMLAnchorElement;
       if (!anchor.matches(":focus-visible")) return;
       clearTimers();
-      read(anchor, "hover");
+      show(anchor, readFootnote(root, anchor), "hover");
     };
 
     const tap = (event: MouseEvent) => {
@@ -177,13 +270,15 @@ export default function ReferencePeek({
       clearTimers();
       // The jump is only given up once there is something better to replace it
       // with; a reference this cannot read stays an ordinary link.
-      if (read(anchor, "tap")) event.preventDefault();
+      if (show(anchor, readFootnote(root, anchor), "tap")) event.preventDefault();
     };
 
     markers.forEach((a) => {
       if (finePointer) {
         a.addEventListener("pointerenter", enter);
         a.addEventListener("pointerleave", close);
+        // Only footnotes open on focus. A card on every tabbed link would be
+        // noise; a link already says where it goes.
         a.addEventListener("focus", focus);
         a.addEventListener("blur", close);
       } else {
@@ -191,9 +286,17 @@ export default function ReferencePeek({
       }
     });
 
+    // Links keep their own behaviour on touch — tapping one should go there.
+    if (finePointer) {
+      links.forEach((a) => {
+        a.addEventListener("pointerenter", enter);
+        a.addEventListener("pointerleave", close);
+      });
+    }
+
     return () => {
       clearTimers();
-      markers.forEach((a) => {
+      [...markers, ...links].forEach((a) => {
         a.removeEventListener("pointerenter", enter);
         a.removeEventListener("pointerleave", close);
         a.removeEventListener("focus", focus);
@@ -201,7 +304,7 @@ export default function ReferencePeek({
         a.removeEventListener("click", tap);
       });
     };
-  }, [containerRef, close, dismiss, finePointer]);
+  }, [containerRef, close, dismiss, finePointer, posts]);
 
   /* Escape closes, the way any transient overlay should. A tap-opened card also
      closes on a tap outside it, since there is no pointer to simply leave. */
@@ -304,7 +407,7 @@ export default function ReferencePeek({
     };
   }, [peek, containerRef]);
 
-  /* Marks the live marker so it can hold full ink while its card is open, and
+  /* Marks the live anchor so it can hold full ink while its card is open, and
      says so to anything reading the page rather than looking at it. */
   useEffect(() => {
     const anchor = peek?.anchor;
@@ -329,6 +432,7 @@ export default function ReferencePeek({
 
   if (typeof document === "undefined" || !peek) return null;
 
+  const { source } = peek;
   const tapped = peek.via === "tap";
 
   return createPortal(
@@ -353,7 +457,7 @@ export default function ReferencePeek({
         ref={cardRef}
         className="peek-card"
         role={tapped ? "dialog" : undefined}
-        aria-label={tapped ? `Reference ${peek.index}` : undefined}
+        aria-label={tapped ? `Reference ${source.label}` : undefined}
         tabIndex={tapped ? -1 : undefined}
         style={{
           left: frame ? `${frame.left}px` : "-9999px",
@@ -364,7 +468,7 @@ export default function ReferencePeek({
         onPointerLeave={tapped ? undefined : close}
       >
         <div className="peek-head">
-          <span className="peek-index label">{peek.index}</span>
+          <span className="peek-index label">{source.label}</span>
           {tapped && (
             <button
               type="button"
@@ -378,7 +482,27 @@ export default function ReferencePeek({
             </button>
           )}
         </div>
-        <div className="peek-body prose" dangerouslySetInnerHTML={{ __html: peek.html }} />
+
+        {source.kind === "footnote" && (
+          <div className="peek-body prose" dangerouslySetInnerHTML={{ __html: source.html }} />
+        )}
+
+        {source.kind === "post" && (
+          <div className="peek-body">
+            <span className="peek-title title-display">{source.post.title}</span>
+            <time className="peek-date label" dateTime={source.post.date}>
+              {source.post.date}
+            </time>
+            {source.post.excerpt && <p className="peek-excerpt">{source.post.excerpt}</p>}
+          </div>
+        )}
+
+        {source.kind === "link" && (
+          <div className="peek-body">
+            <span className="peek-host">{source.host}</span>
+            {source.path && <span className="peek-path">{source.path}</span>}
+          </div>
+        )}
       </div>
     </div>,
     document.body
