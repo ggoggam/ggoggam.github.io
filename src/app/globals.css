@@ -302,6 +302,44 @@
   }
 }
 
+/* The asterisk that lets a finger preview a link without following it. Hidden
+   until the peek marks the article ready, so it never sits inert on a page
+   without JavaScript, and hidden from a pointer, which previews by hovering the
+   link itself. Same voice and same target treatment as a footnote marker — the
+   two read as one family of small marks you can open. */
+.peek-marker {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  [data-peek-ready] .prose :where(.peek-marker) {
+    display: inline;
+    position: relative;
+    font-family: var(--font-mono);
+    /* Matched by eye, not by arithmetic, and the arithmetic is misleading here:
+       a footnote numeral reads 0.7em but computes to 8.4px, because `sup`
+       shrinks the text once before that multiplies it again. This mark takes no
+       `sup`, so 0.85em lands at 13.6px — and the two still read as one size,
+       because an asterisk inks a fraction of its em box while a digit nearly
+       fills one. Equal sizes would make this the smaller of the pair. */
+    font-size: 0.85em;
+    line-height: 1;
+    color: var(--ink-muted);
+    padding: 0 0.1em 0 0.14em;
+    transition: color 150ms ease-out;
+  }
+
+  [data-peek-ready] .prose :where(.peek-marker)::after {
+    content: "";
+    position: absolute;
+    inset: -0.7rem -0.55rem;
+  }
+
+  [data-peek-ready] .prose :where(.peek-marker)[data-peek-open="true"] {
+    color: var(--ink);
+  }
+}
+
 /* A reference can carry a plate. It stays a thumbnail down here, where the list
    is a list; the peek card is where it gets to be an image. */
 .prose :where(section[data-footnotes] img) {

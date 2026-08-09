@@ -166,7 +166,7 @@ on almost nothing, plus a separate ink set reserved for data.
 - **Daylight Paper** (`#fbfbfb` light / `#0e0e0e` dark): The page ground. Named paper, not cream — the reading scene assumed by the build is a browser tab in daylight, not a book.
 - **Sunk Paper** (`#f4f4f3` light / `#171717` dark): The only recessed surface in the system, used for code blocks, inline code, and the one text input. It replaces what a card background would otherwise do.
 - **Full Ink** (`#111111` light / `#ededed` dark): All running text, all headings, the wordmark, the selection background, and the focus ring.
-- **Muted Ink** (`#5c5c5c` light, 6.4:1 on paper / `#9e9e9e` dark, 7.1:1): The metadata voice — labels, dates, excerpts, captions, table headers, code line numbers, blockquotes. This is the *floor* for text, not a fade.
+- **Muted Ink** (`#5c5c5c` light, 6.4:1 on paper / `#9e9e9e` dark, 7.1:1): The metadata voice — labels, dates, excerpts, captions, table headers, code line numbers, blockquotes. This is the _floor_ for text, not a fade.
 - **Faint Ink** (`#8a8a8a` light, 3.3:1 / `#6b6b6b` dark): Non-text only — list markers and the resting state of the heading copy-link glyph. It never carries a word a reader has to parse.
 - **Hairline** (`#e3e3e1` light / `#262626` dark): The default border color for every element (`* { border-color: var(--rule) }`) — row dividers, header/footer rules, code and image borders.
 - **Hairline Strong** (`#c9c9c6` light / `#3a3a3a` dark): The second-strength rule: resting link underlines, blockquote bars, table header underlines, scrollbar thumbs, and the plot axis stroke.
@@ -436,8 +436,22 @@ The tap card is the thing itself: `role="dialog"`, labelled by its reference
 number, focused on open, dismissed by its own close control, by a tap outside,
 or by Escape, with focus handed back to the marker. The marker carries
 `aria-expanded` while it is open, and if the reference cannot be read the tap is
-left alone and the link jumps as before. Links keep their own behaviour on
-touch — tapping one should go there — so only footnotes change hands.
+left alone and the link jumps as before.
+
+A link cannot change hands the same way, because tapping a link should go there.
+So on a coarse pointer a previewable link grows a second, smaller target beside
+it: an asterisk in the mono voice, `--ink-muted`, going to full ink while its
+card is open, carrying the same `::after` overlay that clears 24px. Tapping it
+opens the preview; tapping the link still follows it. The asterisk and the
+footnote number read as one family of small marks you can open — which is the
+old typographic convention of symbols and numerals marking different classes of
+note, doing real work again.
+
+It is rendered server-side but held at `display: none` until the peek puts
+`data-peek-ready` on the article, so a page without JavaScript never shows an
+inert glyph, and there is no hydration mismatch to pay for that. Links that have
+nothing to preview — a bare `#` anchor, an internal path that is not a post —
+never get one, so a marker always opens something.
 
 Touch also changes the marker. With no hover to discover the affordance, the
 dotted underline is permanent under `(pointer: coarse)`, and an `::after`
