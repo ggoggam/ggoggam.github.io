@@ -398,14 +398,23 @@ runs, the one nearest the hand.
 
 Placement follows the hand, and keeps following it. On a pointer the card sits
 26px right and 22px below the cursor at up to 300px wide, flipping to the other
-side of either axis rather than running off the viewport, and it moves with the
-cursor for as long as the cursor is on the reference — which is the whole time
-the reader is looking at the words rather than at the card. Leaving the outline
-stops it: the reader is on their way to the card by then, and a card that keeps
-moving is a card you cannot reach. What is kept between frames is the offset from
-the words rather than the point, so the card also rides its own line when the
-page scrolls. Below 640px it spans the measure itself and sits under the line, so
-its edges line up with the text it interrupts.
+side of either axis rather than running off the viewport, and it goes on moving
+with the cursor anywhere within 80px of the reference. The radius is the point: a
+line of text is 25px tall, so a card that only tracked while the pointer was on
+the words would stop the instant the hand moved at all. Two things stop it —
+drifting past that radius, which means the reader is on their way to the card,
+and reaching the card, which a card that kept moving could never allow. What is
+kept between frames is the offset from the words rather than the point, so the
+card also rides its own line when the page scrolls. Below 640px it spans the
+measure itself and sits under the line, so its edges line up with the text it
+interrupts.
+
+Both parts fade rather than blink, 150ms each way, and by transition rather than
+animation: `@starting-style` gives a mounting node somewhere to come from, and
+the same declaration carries it back out. Leaving is the harder half — an overlay
+cannot fade after React has taken its nodes away — so a dismissed peek is held
+mounted for the length of its own fade, holding still while it goes, with
+everything else already treating it as gone.
 
 Opening asks the pointer to be on the words; keeping the card open asks far less.
 Once it is up it is something the reader went and got, and it survives anywhere

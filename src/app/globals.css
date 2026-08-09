@@ -337,13 +337,27 @@
   pointer-events: none;
 }
 
-@keyframes peek-in {
-  from {
+/* Both parts arrive and leave the same way, and by transition rather than by
+   animation: `@starting-style` gives a mounting node somewhere to come from, and
+   the same declaration then carries it back out when the component holds it
+   through the fade. Where `@starting-style` is not understood the overlay simply
+   appears, which is what it did before any of this. */
+.peek-plot,
+.peek-card {
+  opacity: 1;
+  transition: opacity 150ms ease-out;
+}
+
+@starting-style {
+  .peek-plot,
+  .peek-card {
     opacity: 0;
   }
-  to {
-    opacity: 1;
-  }
+}
+
+.peek[data-leaving="true"] .peek-plot,
+.peek[data-leaving="true"] .peek-card {
+  opacity: 0;
 }
 
 /* The drawn layer: the outline around the words, the square riding its border,
@@ -355,7 +369,6 @@
   width: 100%;
   height: 100%;
   overflow: visible;
-  animation: peek-in 120ms ease-out both;
 }
 
 /* A hairline box, not a highlight — it measures the reference rather than
@@ -383,7 +396,6 @@
 
 .peek-card {
   position: absolute;
-  animation: peek-in 150ms ease-out both;
   max-height: calc(100vh - 2.5rem);
   overflow-y: auto;
   padding: 0.875rem 1rem 1rem;

@@ -27,10 +27,12 @@ import { getBlogPosts, getTILPosts, type PostMeta } from "@/lib/posts";
 
    The pointer meets it in two stages, which is what makes the card feel earned
    rather than sprung. Arriving at the reference boxes it immediately: a hairline
-   rectangle around the words, with a small paper-filled square riding the
-   nearest point of that border, so the mark tracks the hand. Staying draws the
-   card near the cursor, tethered back to that square by a leader line. Nothing
-   about the first stage commits the reader to the second.
+   rectangle around the words, with a small paper-filled square riding that
+   border under the hand. Staying draws the card beside the cursor, tethered back
+   to the square by a leader line, and the card goes on following the hand until
+   the hand leaves for it. Nothing about the first stage commits the reader to
+   the second, and both stages fade rather than blink — which is why a dismissed
+   peek is held mounted for the length of its own fade.
 
    What counts as arriving, for a footnote, is the whole underlined phrase and
    not just the superscript hanging off its end. The underline is the promise the
@@ -56,11 +58,20 @@ const LINE_GAP = 24;
 /* Approaching counts. Without the slop the outline snaps on at the exact glyph
    edge, which reads as a twitch rather than as a response. */
 const HIT_SLOP = 5;
+/* How far the card keeps chasing the hand. A line of text is 25px tall, so
+   testing the outline alone means the card stops the moment the pointer drifts
+   a few pixels off it — which is most of the time, and reads as a card that
+   does not follow at all. */
+const FOLLOW_SLOP = 80;
 /* How far the hand may drift before an open card is given up. Deliberately far
    past the one that opened it: arriving somewhere should be harder than staying
    there, or a card the reader is still reading closes for want of a steady
    hand. */
 const KEEP_SLOP = 200;
+/* Long enough to read as a fade, short enough that a card on its way out never
+   stands between the reader and the one they are opening next. Matches the
+   transition in globals.css. */
+const FADE = 150;
 /* A footnote is a deliberate target and opens quickly. Prose is full of links a
    pointer only crosses on its way somewhere, so those wait. */
 const FOOTNOTE_DELAY = 90;
@@ -360,26 +371,43 @@ export default function ReferencePeek({
   const originRef = useRef({ dx: 0, dy: 0 });
   const openTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  /* An overlay cannot fade out after React has taken its nodes away, so a
+     dismissed peek stays mounted for the length of the fade. Everything else
+     treats it as already gone — it is on its way out and nothing may reach it. */
+  const [leaving, setLeaving] = useState(false);
+  const leavingRef = useRef(false);
+  const leaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     peekRef.current = peek;
   }, [peek]);
 
+  const settle = (going: boolean) => {
+    leavingRef.current = going;
+    setLeaving(going);
+  };
+
   const clearTimers = () => {
     clearTimeout(openTimer.current);
     clearTimeout(closeTimer.current);
+    clearTimeout(leaveTimer.current);
   };
 
   const dismiss = useCallback(() => {
     const current = peekRef.current;
+    if (!current || leavingRef.current) return;
     // Hand focus back to the anchor, but only if it is ours to hand back —
     // a tap somewhere else has already moved it on purpose.
-    if (current?.via === "tap" && cardRef.current?.contains(document.activeElement)) {
+    if (current.via === "tap" && cardRef.current?.contains(document.activeElement)) {
       current.anchor.focus({ preventScroll: true });
     }
-    setPeek(null);
-    setCarded(false);
-    setBoxes(null);
+    settle(true);
+    leaveTimer.current = setTimeout(() => {
+      settle(false);
+      setPeek(null);
+      setCarded(false);
+      setBoxes(null);
+    }, FADE);
   }, []);
 
   const close = useCallback(() => {
@@ -395,6 +423,9 @@ export default function ReferencePeek({
   const open = useCallback(
     (anchor: HTMLAnchorElement, source: Source, via: Peek["via"], delay: number) => {
       clearTimers();
+      // Caught on the way out: it fades back in from wherever it had got to
+      // rather than blinking.
+      settle(false);
       setPeek({ anchor, source, via });
       setCarded(delay === 0);
       if (delay === 0) {
@@ -414,12 +445,13 @@ export default function ReferencePeek({
 
   /* Where the card goes, recomputed every frame the hand moves.
 
-     It follows the cursor for as long as the cursor is on the reference, which
-     is the whole time the reader is looking at the words rather than at the
-     card. Leaving the outline stops it: the reader is on their way to the card
-     by then, and a card that keeps moving is a card you cannot reach. What is
-     kept between frames is the offset from the words, not the point, so the
-     card also rides its own line when the page scrolls. */
+     It follows the cursor while the cursor is anywhere near the reference, and a
+     line of text is not much to be near — hence a radius rather than the outline
+     itself, which the hand leaves the moment it moves at all. Two things stop
+     it: drifting past that radius, which means the reader is on their way to the
+     card, and reaching the card, which a card that kept moving could never
+     allow. What is kept between frames is the offset from the words, not the
+     point, so the card also rides its own line when the page scrolls. */
   const place = useCallback(
     (boxes: Box[]): Box | null => {
       const card = cardRef.current;
@@ -427,7 +459,13 @@ export default function ReferencePeek({
       const current = peekRef.current;
       if (!card || !column || !current) return null;
 
-      if (current.via !== "tap" && cursor.known && inside(boxes, cursor.x, cursor.y, HIT_SLOP)) {
+      const held = card.getBoundingClientRect();
+      const chasing =
+        current.via !== "tap" &&
+        cursor.known &&
+        !inside([held], cursor.x, cursor.y) &&
+        inside(boxes, cursor.x, cursor.y, FOLLOW_SLOP);
+      if (chasing) {
         const on = anchorPoint(current.anchor);
         originRef.current = { dx: cursor.x - on.x, dy: cursor.y - on.y };
       }
@@ -500,7 +538,9 @@ export default function ReferencePeek({
   const draw = useCallback(() => {
     const handle = handleRef.current;
     const live = peekRef.current?.via !== "tap";
-    if (!handle || !boxes?.length) return;
+    // On the way out it holds still. Chasing the hand while fading would read as
+    // the overlay flinching rather than leaving.
+    if (!handle || !boxes?.length || leavingRef.current) return;
 
     const card = place(boxes);
     // With no hand to follow — a tap, a keyboard — the square parks on the
@@ -633,7 +673,9 @@ export default function ReferencePeek({
 
     let queued = 0;
     const test = () => {
-      const current = peekRef.current;
+      // A peek that is fading out is not there to be held onto or closed again;
+      // the pointer meeting its reference again opens a fresh one.
+      const current = leavingRef.current ? null : peekRef.current;
       if (current?.via === "tap") return;
 
       const found = zones().findIndex((boxes) => inside(boxes, cursor.x, cursor.y, HIT_SLOP));
@@ -852,7 +894,11 @@ export default function ReferencePeek({
   const tapped = peek.via === "tap";
 
   return createPortal(
-    <div className="peek" aria-hidden={tapped ? undefined : true}>
+    <div
+      className="peek"
+      data-leaving={leaving ? "true" : undefined}
+      aria-hidden={tapped ? undefined : true}
+    >
       {boxes && (
         <svg className="peek-plot" aria-hidden="true">
           {boxes.map((b, i) => (
