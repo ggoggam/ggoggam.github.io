@@ -21,7 +21,6 @@
     "@tanstack/react-router": "^1.114.23",
     "@vitejs/plugin-react": "^4.3.4",
     "date-fns": "^4.1.0",
-    "gray-matter": "^4.0.3",
     "katex": "^0.16.21",
     "pretendard": "^1.3.9",
     "react": "^19.2.1",
