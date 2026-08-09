@@ -342,12 +342,38 @@ numbers are generated content but are still text a reader parses, so they sit at
 
 ### Reference Peek
 
-Hovering a footnote marker pulls that reference out of the list at the foot of
-the article and sets it beside the line it belongs to. The card is the system's
-usual construction — paper ground, one 1px `--rule-strong` hairline, square, 14px
-padding, body copy one step down at `--text-sm`, the number above it in the mono
-label voice. A reference may carry an image; it is a 12rem thumbnail in the list
-below and full card width in the peek.
+Reaching a reference pulls it up beside the line that cites it. The card is the
+system's usual construction — paper ground, one 1px `--rule-strong` hairline,
+square, 14px padding, body copy one step down at `--text-sm`, a short label
+above it in the mono voice.
+
+Three things are worth previewing, and each gets the body it deserves. A
+**footnote** shows its own text, lifted out of the list at the foot of the
+article; it may carry an image, which is a 12rem thumbnail in the list below and
+full card width here. A **link to a post on this site** shows the post: title in
+the display voice, date in the mono voice, its own excerpt underneath. **Any
+other link** shows the destination, spelled out — host, then path, in mono. That
+last one is deliberately modest: without a build-time metadata fetch, where a
+link goes is the only thing the site can promise about it honestly.
+
+### Cited Phrases
+
+A footnote marker is a point, not a span, so markdown never says which words a
+reference annotates. The convention readers already use is that a marker
+annotates the clause it sits at the end of, and that is recoverable: walk back
+through the block's text to the nearest terminal stop, list comma, or spaced
+dash, capped at 140 characters of whole words. `runs-on/cache` and `v0.2.0`
+survive because a break has to be followed by whitespace.
+
+The result is a dotted 1px underline in `--rule-strong` at rest — the same
+weight as a resting link underline, dotted so it never reads as one — going to
+`--ink` while its card is open, with skip-ink off so descenders do not punch
+holes in the dots. It is drawn with the CSS Custom Highlight API over a live
+`Range`, not by wrapping the words in a span: wrapping would mean mutating prose
+React did not render and cannot reconcile, while a Range is a pair of
+coordinates over text that already exists and survives reflow on its own. Where
+the API is missing the underline simply does not appear and nothing else
+changes.
 
 The connection back to the word is drawn, not implied: a dashed `--rule-strong`
 hairline across the viewport and another down it, crossing at the marker's
@@ -363,7 +389,9 @@ the marker at 300px; below 640px it spans the measure itself, so its edges line
 up with the text it interrupts. The coordinate readout needs 96px of clear left
 margin and simply does not appear when there is less.
 
-A pointer opens the card by hovering. A finger opens it by tapping, which takes
+A pointer opens the card by hovering — quickly on a footnote marker, which is a
+deliberate target, and after 320ms on a link, which prose is full of and a
+pointer often only crosses. A finger opens a footnote card by tapping, which takes
 over the marker's jump — that jump is the exact thing that costs a phone reader
 their place, and the card replaces it with the same reference in situ. Because
 tapping is then the only way in, the two modes have different contracts. The
@@ -372,7 +400,8 @@ The tap card is the thing itself: `role="dialog"`, labelled by its reference
 number, focused on open, dismissed by its own close control, by a tap outside,
 or by Escape, with focus handed back to the marker. The marker carries
 `aria-expanded` while it is open, and if the reference cannot be read the tap is
-left alone and the link jumps as before.
+left alone and the link jumps as before. Links keep their own behaviour on
+touch — tapping one should go there — so only footnotes change hands.
 
 Touch also changes the marker. With no hover to discover the affordance, the
 dotted underline is permanent under `(pointer: coarse)`, and an `::after`

@@ -309,6 +309,23 @@
   margin: 0.75rem 0 0;
 }
 
+/* The words a footnote annotates, underlined where they are cited. Dotted, so
+   it never reads as a link, and skip-ink off so descenders do not punch holes
+   in a line of dots. Drawn with the Custom Highlight API over a Range, which is
+   why these are pseudo-elements and not a class on a wrapper: there is no
+   wrapper, and the prose is left exactly as MDX rendered it. */
+::highlight(cited-phrase) {
+  text-decoration: underline dotted 1px var(--rule-strong);
+  text-underline-offset: 0.22em;
+  text-decoration-skip-ink: none;
+}
+
+::highlight(cited-phrase-live) {
+  text-decoration: underline dotted 1px var(--ink);
+  text-underline-offset: 0.22em;
+  text-decoration-skip-ink: none;
+}
+
 /* ---------------------------------------------------------------------------
    Reference peek — see components/post/reference-peek.tsx
    --------------------------------------------------------------------------- */
@@ -438,7 +455,44 @@
 
 .peek-body :where(pre) {
   margin: 0.6rem 0;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
+}
+
+/* A post on this site previews as the post: its title in the announcing voice,
+   its date in the metadata voice, its own excerpt underneath. */
+.peek-title {
+  display: block;
+  font-size: var(--text-h3);
+  line-height: 1.2;
+}
+
+.peek-date {
+  display: block;
+  margin-top: 0.4rem;
+}
+
+.peek-excerpt {
+  margin-top: 0.6rem;
+  color: var(--ink-muted);
+}
+
+/* Anywhere else previews as the destination, spelled out — the one thing a
+   link can promise honestly without a network round trip. */
+.peek-host {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+
+.peek-path {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--ink-muted);
+  word-break: break-all;
 }
 
 /* ---------------------------------------------------------------------------
