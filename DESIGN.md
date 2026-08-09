@@ -43,6 +43,11 @@ typography:
     fontSize: "clamp(1rem, 0.96rem + 0.18vw, 1.125rem)"
     fontWeight: 400
     lineHeight: 1.72
+  small:
+    fontFamily: '"Pretendard Variable", Pretendard, ui-sans-serif, system-ui, sans-serif'
+    fontSize: "0.8125rem"
+    fontWeight: 400
+    lineHeight: 1.62
   label:
     fontFamily: '"Spline Sans Mono", "Pretendard Variable", Pretendard, ui-monospace, monospace'
     fontSize: "0.75rem"
@@ -198,6 +203,7 @@ on almost nothing, plus a separate ink set reserved for data.
 - **Title** (700, `clamp(1.0625rem … 1.25rem)`, 1.04, −0.02em): Post-row links in every list, and `h3` in prose. The display face at body size is what makes a list of titles read as a contents page.
 - **Lede** (400, `clamp(1.0625rem … 1.25rem)`, 1.6): The opening standfirst copy of a page. Only the About page still runs one — the index pages carry no visible title or standfirst.
 - **Body** (400, `clamp(1rem … 1.125rem)`, 1.72, capped at 64ch): All prose. Paragraph rhythm is 20px top and bottom.
+- **Small** (400, 13px, 1.62): The one step below body, for sentence-length copy that is subordinate to the running text rather than part of it — post-row excerpts, the home plate's caption, footnotes, table cells, and the reference-peek card. Code blocks and the peek's host line take the same step in the mono face; it is a size, not a voice, so either face may set it. It is the only fixed step between the label voice and body, and there is nothing between 13px and body on purpose: anything that wants to be *slightly* smaller than prose belongs at prose size.
 - **Label** (400, 12px, 0.14em, uppercase, tabular figures): Every date, section nav item, tag heading, kind marker, footer link, table header, and caption. `label-strong` is the same voice at full ink for the active or emphasized instance.
 - **Micro label** (400, 11px, 0.06em, uppercase): Tag chips and the kind marker in dense rows, where 0.14em would break the word apart at that size.
 - **Wordmark** (Pretendard 700, `clamp(1.125rem … 1.3125rem)`, tight tracking): 꼬깜 only. The one place the body face is set bold.

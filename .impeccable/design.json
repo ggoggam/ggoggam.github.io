@@ -101,6 +101,7 @@
       "title": { "displayName": "Title", "purpose": "Post-row links in every list and h3 in prose. The display face at body size is what makes a list read as a contents page." },
       "lede": { "displayName": "Lede", "purpose": "Single standfirst paragraph under a page h1, capped at 46ch, in muted ink." },
       "body": { "displayName": "Body", "purpose": "All prose and all sentence-length copy, capped at the 64ch measure." },
+      "small": { "displayName": "Small", "purpose": "The one step below body, for sentence-length copy subordinate to the running text: post-row excerpts, the home plate's caption, footnotes, table cells, the reference-peek card. Code blocks take the same step in the mono face — it is a size, not a voice." },
       "label": { "displayName": "Label", "purpose": "The metadata voice: dates, nav, kind markers, table headers, captions. One to three words only." },
       "label-micro": { "displayName": "Micro Label", "purpose": "Tags and dense-row kind markers at 11px, where 0.14em tracking would break the word apart." },
       "wordmark": { "displayName": "Wordmark", "purpose": "꼬깜 only. The one place the body face is set bold; Pretendard is used because it is the only face here that draws Korean." }
