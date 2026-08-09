@@ -265,6 +265,182 @@
   padding: 0 0.15em;
 }
 
+/* A marker that will show you its reference says so: a dotted underline on
+   approach, full ink while its card is open. Dotted rather than solid keeps it
+   distinct from a link, which is a different promise. */
+.prose :where(sup a[data-footnote-ref]) {
+  color: var(--ink-muted);
+  text-underline-offset: 0.24em;
+  transition:
+    color 150ms ease-out,
+    text-decoration-color 150ms ease-out;
+}
+
+.prose :where(sup a[data-footnote-ref]):hover,
+.prose :where(sup a[data-footnote-ref])[data-peek-open="true"] {
+  color: var(--ink);
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1px;
+}
+
+/* On touch there is no hover to discover the affordance with, so the marker
+   wears the dotted underline all the time and grows a real target: a 7.6×10px
+   superscript is a third of the 24px minimum. The target is an overlay rather
+   than padding, so nothing in the line box moves to make room for it. */
+@media (pointer: coarse) {
+  .prose :where(sup a[data-footnote-ref]) {
+    position: relative;
+    text-decoration: underline dotted;
+    text-decoration-thickness: 1px;
+  }
+
+  .prose :where(sup a[data-footnote-ref])::after {
+    content: "";
+    position: absolute;
+    /* 7.6px of glyph plus 2×8.8px clears the 24px minimum on the short axis. */
+    inset: -0.7rem -0.55rem;
+  }
+}
+
+/* A reference can carry a plate. It stays a thumbnail down here, where the list
+   is a list; the peek card is where it gets to be an image. */
+.prose :where(section[data-footnotes] img) {
+  max-width: 12rem;
+  margin: 0.75rem 0 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Reference peek — see components/post/reference-peek.tsx
+   --------------------------------------------------------------------------- */
+
+.peek {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  animation: peek-in 150ms ease-out both;
+}
+
+@keyframes peek-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Two hairlines that find the word. Dashed so they read as measurement rather
+   than as a rule the page owns. */
+.peek-cross {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  border-top: 1px dashed var(--rule-strong);
+}
+
+.peek-cross--v {
+  top: 0;
+  left: auto;
+  width: 0;
+  height: 100%;
+  border-top: 0;
+  border-left: 1px dashed var(--rule-strong);
+}
+
+/* The register mark is the one place the crosshair goes to full ink — it marks
+   the exact word, so it has to be the darkest thing in the overlay. */
+.peek-mark {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  margin: -3px 0 0 -3px;
+  background: var(--ink);
+}
+
+.peek-readout {
+  position: absolute;
+  left: 1.25rem;
+  transform: translateY(-0.4rem);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-feature-settings: "tnum" 1;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.peek-card {
+  position: absolute;
+  max-height: calc(100vh - 2.5rem);
+  overflow-y: auto;
+  padding: 0.875rem 1rem 1rem;
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  pointer-events: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+
+.peek-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  /* Reserves the close control's height in both modes, so a card does not
+     change shape between a hover open and a tap open. */
+  min-height: 1.25rem;
+}
+
+.peek-index {
+  color: var(--ink-faint);
+}
+
+/* Hit-padded rather than boxed, like every other target in the system. */
+.peek-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: -0.5rem -0.5rem -0.5rem 0;
+  width: 2rem;
+  height: 2rem;
+  color: var(--ink-faint);
+  transition: color 150ms ease-out;
+}
+
+.peek-close:hover {
+  color: var(--ink);
+}
+
+/* The body is real prose — links, code, and plates all keep their usual voice,
+   one step down in size because it is an aside. */
+.peek-body {
+  max-width: none;
+  font-size: var(--text-sm);
+  line-height: 1.62;
+}
+
+.peek-body :where(p) {
+  margin: 0;
+}
+
+.peek-body :where(p + p) {
+  margin-top: 0.6rem;
+}
+
+.peek-body :where(img) {
+  display: block;
+  width: 100%;
+  max-width: none;
+  margin: 0 0 0.75rem;
+}
+
+.peek-body :where(pre) {
+  margin: 0.6rem 0;
+  font-size: 0.75rem;
+}
+
 /* ---------------------------------------------------------------------------
    Code — dual-themed by rehype-pretty-code, driven from the tokens above.
    --------------------------------------------------------------------------- */
