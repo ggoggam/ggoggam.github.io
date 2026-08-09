@@ -400,8 +400,22 @@ The tap card is the thing itself: `role="dialog"`, labelled by its reference
 number, focused on open, dismissed by its own close control, by a tap outside,
 or by Escape, with focus handed back to the marker. The marker carries
 `aria-expanded` while it is open, and if the reference cannot be read the tap is
-left alone and the link jumps as before. Links keep their own behaviour on
-touch — tapping one should go there — so only footnotes change hands.
+left alone and the link jumps as before.
+
+A link cannot change hands the same way, because tapping a link should go there.
+So on a coarse pointer a previewable link grows a second, smaller target beside
+it: an asterisk in the mono voice, `--ink-muted`, going to full ink while its
+card is open, carrying the same `::after` overlay that clears 24px. Tapping it
+opens the preview; tapping the link still follows it. The asterisk and the
+footnote number read as one family of small marks you can open — which is the
+old typographic convention of symbols and numerals marking different classes of
+note, doing real work again.
+
+It is rendered server-side but held at `display: none` until the peek puts
+`data-peek-ready` on the article, so a page without JavaScript never shows an
+inert glyph, and there is no hydration mismatch to pay for that. Links that have
+nothing to preview — a bare `#` anchor, an internal path that is not a post —
+never get one, so a marker always opens something.
 
 Touch also changes the marker. With no hover to discover the affordance, the
 dotted underline is permanent under `(pointer: coarse)`, and an `::after`

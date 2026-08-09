@@ -2,14 +2,13 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
 } from "react";
 import { createPortal } from "react-dom";
 import { citedPhrase, supportsHighlights } from "@/lib/cited-phrase";
-import { getBlogPosts, getTILPosts, type PostMeta } from "@/lib/posts";
+import { describeLink, type LinkPreview } from "@/lib/link-preview";
 
 /* Reaching a reference pulls it up beside the line that cites it, instead of
    sending the reader somewhere else to find it. Two things count as a
@@ -54,13 +53,12 @@ const subscribePointer = (onChange: () => void) => {
   return () => query.removeEventListener("change", onChange);
 };
 
-type Source =
-  | { kind: "footnote"; label: string; html: string }
-  | { kind: "post"; label: string; post: PostMeta }
-  | { kind: "link"; label: string; host: string; path: string };
+type Source = { kind: "footnote"; label: string; html: string } | LinkPreview;
 
 type Peek = {
-  anchor: HTMLAnchorElement;
+  /** What the card is placed against: a footnote marker, a link, or on touch
+      the asterisk that stands in for hovering one. */
+  anchor: HTMLElement;
   source: Source;
   via: "hover" | "tap";
 };
@@ -84,33 +82,6 @@ function readFootnote(root: HTMLElement, marker: HTMLAnchorElement): Source | nu
   const clone = source.cloneNode(true) as HTMLElement;
   clone.querySelectorAll("[data-footnote-backref]").forEach((el) => el.remove());
   return { kind: "footnote", label: marker.textContent ?? "", html: clone.innerHTML };
-}
-
-/** What a link can honestly promise before you follow it: for a post on this
-    site, the post; for anywhere else, the destination, spelled out. */
-function readLink(anchor: HTMLAnchorElement, posts: Map<string, PostMeta>): Source | null {
-  const href = anchor.getAttribute("href") ?? "";
-  if (!href || href.startsWith("#")) return null;
-
-  if (href.startsWith("/")) {
-    const post = posts.get(href.replace(/\/$/, ""));
-    // An internal link that is not a post — /about, an index — describes itself
-    // well enough in its own text. Only a post has anything to preview.
-    return post ? { kind: "post", label: post.type, post } : null;
-  }
-
-  try {
-    const url = new URL(href);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
-    return {
-      kind: "link",
-      label: "external",
-      host: url.host.replace(/^www\./, ""),
-      path: `${url.pathname}${url.search}${url.hash}`.replace(/^\/$/, ""),
-    };
-  } catch {
-    return null;
-  }
 }
 
 /* The crosshair registers on the anchor's trailing edge rather than its centre,
@@ -147,10 +118,6 @@ export default function ReferencePeek({
     () => true
   );
 
-  const posts = useMemo(
-    () => new Map([...getBlogPosts(), ...getTILPosts()].map((p) => [p.url, p])),
-    []
-  );
   const [peek, setPeek] = useState<Peek | null>(null);
   const [frame, setFrame] = useState<Frame | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -235,7 +202,12 @@ export default function ReferencePeek({
         !a.closest("h1, h2, h3, h4, h5, h6")
     );
 
-    const show = (anchor: HTMLAnchorElement, source: Source | null, via: Peek["via"]) => {
+    // On touch, links carry their own asterisk rather than surrendering the tap.
+    const linkMarkers = Array.from(
+      root.querySelectorAll<HTMLButtonElement>("button[data-peek-marker]")
+    );
+
+    const show = (anchor: HTMLElement, source: Source | null, via: Peek["via"]) => {
       if (!source) return false;
       setPeek({ anchor, source, via });
       return true;
@@ -247,7 +219,11 @@ export default function ReferencePeek({
       clearTimers();
       openTimer.current = setTimeout(
         () =>
-          show(anchor, footnote ? readFootnote(root, anchor) : readLink(anchor, posts), "hover"),
+          show(
+            anchor,
+            footnote ? readFootnote(root, anchor) : describeLink(anchor.getAttribute("href") ?? ""),
+            "hover"
+          ),
         footnote ? FOOTNOTE_DELAY : LINK_DELAY
       );
     };
@@ -259,7 +235,7 @@ export default function ReferencePeek({
       show(anchor, readFootnote(root, anchor), "hover");
     };
 
-    const tap = (event: MouseEvent) => {
+    const tapFootnote = (event: MouseEvent) => {
       const anchor = event.currentTarget as HTMLAnchorElement;
       if (peekRef.current?.anchor === anchor) {
         event.preventDefault();
@@ -273,6 +249,17 @@ export default function ReferencePeek({
       if (show(anchor, readFootnote(root, anchor), "tap")) event.preventDefault();
     };
 
+    // The asterisk has no default to preserve — it exists only to open this.
+    const tapMarker = (event: MouseEvent) => {
+      const marker = event.currentTarget as HTMLButtonElement;
+      clearTimers();
+      if (peekRef.current?.anchor === marker) {
+        dismiss();
+        return;
+      }
+      show(marker, describeLink(marker.dataset.peekHref), "tap");
+    };
+
     markers.forEach((a) => {
       if (finePointer) {
         a.addEventListener("pointerenter", enter);
@@ -282,29 +269,38 @@ export default function ReferencePeek({
         a.addEventListener("focus", focus);
         a.addEventListener("blur", close);
       } else {
-        a.addEventListener("click", tap);
+        a.addEventListener("click", tapFootnote);
       }
     });
 
-    // Links keep their own behaviour on touch — tapping one should go there.
     if (finePointer) {
+      // A pointer previews a link by hovering the link itself, so the asterisk
+      // stays hidden and unwired.
       links.forEach((a) => {
         a.addEventListener("pointerenter", enter);
         a.addEventListener("pointerleave", close);
       });
+    } else {
+      linkMarkers.forEach((b) => b.addEventListener("click", tapMarker));
     }
+
+    // Reveals the asterisks: they are rendered server-side but inert until
+    // something is listening, so a page without JavaScript never shows one.
+    root.setAttribute("data-peek-ready", "true");
 
     return () => {
       clearTimers();
+      root.removeAttribute("data-peek-ready");
       [...markers, ...links].forEach((a) => {
         a.removeEventListener("pointerenter", enter);
         a.removeEventListener("pointerleave", close);
         a.removeEventListener("focus", focus);
         a.removeEventListener("blur", close);
-        a.removeEventListener("click", tap);
+        a.removeEventListener("click", tapFootnote);
       });
+      linkMarkers.forEach((b) => b.removeEventListener("click", tapMarker));
     };
-  }, [containerRef, close, dismiss, finePointer, posts]);
+  }, [containerRef, close, dismiss, finePointer]);
 
   /* Escape closes, the way any transient overlay should. A tap-opened card also
      closes on a tap outside it, since there is no pointer to simply leave. */
