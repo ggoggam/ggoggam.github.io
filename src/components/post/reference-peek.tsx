@@ -56,6 +56,11 @@ const LINE_GAP = 24;
 /* Approaching counts. Without the slop the outline snaps on at the exact glyph
    edge, which reads as a twitch rather than as a response. */
 const HIT_SLOP = 5;
+/* How far the hand may drift before an open card is given up. Deliberately far
+   past the one that opened it: arriving somewhere should be harder than staying
+   there, or a card the reader is still reading closes for want of a steady
+   hand. */
+const KEEP_SLOP = 200;
 /* A footnote is a deliberate target and opens quickly. Prose is full of links a
    pointer only crosses on its way somewhere, so those wait. */
 const FOOTNOTE_DELAY = 90;
@@ -222,6 +227,81 @@ function corner(card: Box, x: number, y: number) {
   };
 }
 
+type Point = { x: number; y: number };
+
+/** Where the leader should leave a box: the side the card is actually on,
+    holding the hand's position along it. Leaving by the facing side is what
+    keeps the line outside the words instead of drawn through them. Falls back to
+    the nearest edge when the card overlaps the box and no side faces it. */
+function exit(b: Box, card: Box, px: number, py: number): Point {
+  const right = b.left + b.width;
+  const bottom = b.top + b.height;
+  const gaps = [
+    { side: "left", gap: b.left - (card.left + card.width) },
+    { side: "right", gap: card.left - right },
+    { side: "top", gap: b.top - (card.top + card.height) },
+    { side: "bottom", gap: card.top - bottom },
+  ];
+  const facing = gaps.reduce((a, g) => (g.gap > a.gap ? g : a));
+  if (facing.gap <= 0) return onPerimeter([b], px, py);
+  if (facing.side === "left") return { x: b.left, y: clamp(py, b.top, bottom) };
+  if (facing.side === "right") return { x: right, y: clamp(py, b.top, bottom) };
+  if (facing.side === "top") return { x: clamp(px, b.left, right), y: b.top };
+  return { x: clamp(px, b.left, right), y: bottom };
+}
+
+/** Does the segment pass through a box's interior? Liang–Barsky, over a box
+    pulled in half a pixel so a line that merely departs from an edge — which
+    every leader does — does not count as crossing it. */
+function crosses(b: Box, from: Point, to: Point) {
+  const x0 = b.left + 0.5;
+  const y0 = b.top + 0.5;
+  const x1 = b.left + b.width - 0.5;
+  const y1 = b.top + b.height - 0.5;
+  if (x1 <= x0 || y1 <= y0) return false;
+
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const p = [-dx, dx, -dy, dy];
+  const q = [from.x - x0, x1 - from.x, from.y - y0, y1 - from.y];
+  let t0 = 0;
+  let t1 = 1;
+  for (let i = 0; i < 4; i++) {
+    if (p[i] === 0) {
+      if (q[i] < 0) return false;
+      continue;
+    }
+    const r = q[i] / p[i];
+    if (p[i] < 0) {
+      if (r > t1) return false;
+      if (r > t0) t0 = r;
+    } else {
+      if (r < t0) return false;
+      if (r < t1) t1 = r;
+    }
+  }
+  return t0 < t1;
+}
+
+/** The square and the line it anchors. Every line of the reference offers a
+    departure point; the one that wins is a clear run to the card, and among
+    clear runs, the one nearest the hand — so on a phrase that wraps, the square
+    stays under the pointer unless staying there would mean drawing through the
+    words. */
+function tether(boxes: Box[], card: Box, px: number, py: number) {
+  let best: { at: Point; to: Point; clear: boolean; d: number } | null = null;
+  for (const b of boxes) {
+    const at = exit(b, card, px, py);
+    const to = corner(card, at.x, at.y);
+    const clear = !boxes.some((other) => crosses(other, at, to));
+    const d = (at.x - px) ** 2 + (at.y - py) ** 2;
+    if (!best || (clear && !best.clear) || (clear === best.clear && d < best.d)) {
+      best = { at, to, clear, d };
+    }
+  }
+  return best;
+}
+
 /* The card's own resting point, used when there is no cursor to place it by —
    a tap, or a marker reached with the keyboard. A reference that wraps across
    lines is measured on its last one, where it actually ends. */
@@ -381,6 +461,30 @@ export default function ReferencePeek({
         top = clamp(top, EDGE_PAD, window.innerHeight - height - EDGE_PAD);
       }
 
+      /* The card may not cover the words it is about. It is the reference's own
+         text sitting on top of the reference, and there is no route from one to
+         the other that does not cross the other — which is where a leader drawn
+         through the box comes from. So a card that lands on the reference is
+         moved clear of the whole of it, under it by preference and over it when
+         there is no room below. */
+      const line = {
+        top: Math.min(...boxes.map((b) => b.top)),
+        bottom: Math.max(...boxes.map((b) => b.top + b.height)),
+        left: Math.min(...boxes.map((b) => b.left)),
+        right: Math.max(...boxes.map((b) => b.left + b.width)),
+      };
+      const covers =
+        left < line.right &&
+        left + width > line.left &&
+        top < line.bottom &&
+        top + height > line.top;
+      if (covers) {
+        const under = line.bottom + CURSOR_GAP_Y;
+        const over = line.top - CURSOR_GAP_Y - height;
+        top = under + height <= window.innerHeight - EDGE_PAD || over < EDGE_PAD ? under : over;
+        top = clamp(top, EDGE_PAD, window.innerHeight - height - EDGE_PAD);
+      }
+
       card.style.left = `${left}px`;
       card.style.top = `${top}px`;
       return { left, top, width, height };
@@ -389,10 +493,10 @@ export default function ReferencePeek({
   );
 
   /* The whole overlay, redrawn in one pass: the card is moved, the square is put
-     on the border nearest the hand, and the leader is stretched between them.
-     None of it goes through React — the card's contents would re-render sixty
-     times a second for a position change — and keeping it in one callback is
-     what guarantees the leader lands on the card rather than a frame behind it. */
+     on the border, and the leader is stretched between them. None of it goes
+     through React — the card's contents would re-render sixty times a second for
+     a position change — and keeping it in one callback is what guarantees the
+     leader lands on the card rather than a frame behind it. */
   const draw = useCallback(() => {
     const handle = handleRef.current;
     const live = peekRef.current?.via !== "tap";
@@ -406,17 +510,21 @@ export default function ReferencePeek({
       live && cursor.known
         ? { x: cursor.x, y: cursor.y }
         : { x: tail.left + tail.width, y: tail.top + tail.height / 2 };
-    const point = onPerimeter(boxes, from.x, from.y);
+
+    // Until there is a card the square is free to sit wherever the hand is
+    // closest; once there is one it also has a line to carry, and the line
+    // decides which side of the words it may leave from.
+    const tied = card && tether(boxes, card, from.x, from.y);
+    const point = tied ? tied.at : onPerimeter(boxes, from.x, from.y);
     handle.setAttribute("x", (point.x - HANDLE / 2).toFixed(2));
     handle.setAttribute("y", (point.y - HANDLE / 2).toFixed(2));
 
     const lead = leadRef.current;
-    if (!lead || !card) return;
-    const end = corner(card, point.x, point.y);
+    if (!lead || !tied) return;
     lead.setAttribute("x1", point.x.toFixed(2));
     lead.setAttribute("y1", point.y.toFixed(2));
-    lead.setAttribute("x2", end.x.toFixed(2));
-    lead.setAttribute("y2", end.y.toFixed(2));
+    lead.setAttribute("x2", tied.to.x.toFixed(2));
+    lead.setAttribute("y2", tied.to.y.toFixed(2));
   }, [boxes, place]);
 
   /* Layout, not effect: the card mounts unpositioned, and this is what puts it
@@ -503,26 +611,36 @@ export default function ReferencePeek({
       zonesRef.current = null;
     };
 
+    /* Whatever an open reference covers: the phrase and its marker for a
+       footnote, the link's own lines for a link. */
+    const reach = (anchor: HTMLAnchorElement) => {
+      const target = targetsRef.current.find((t) => t.anchor === anchor);
+      return target ? outline(target) : mergeLines(Array.from(anchor.getClientRects()));
+    };
+
+    /* Opening asks the pointer to be on the words; keeping it open asks far
+       less. Once a card is up it is something the reader went and got, and it
+       should not evaporate because the hand drifted off the line while they
+       were reading it — so it survives anywhere within KEEP_SLOP of either the
+       reference or the card, which between them cover the whole route from one
+       to the other. Before the card, there is nothing to protect: the outline is
+       a light touch that tracks the pointer exactly. */
+    const holding = (anchor: HTMLAnchorElement) => {
+      const card = cardRef.current?.getBoundingClientRect();
+      if (card && inside([card], cursor.x, cursor.y, KEEP_SLOP)) return true;
+      return inside(reach(anchor), cursor.x, cursor.y, card ? KEEP_SLOP : HIT_SLOP);
+    };
+
     let queued = 0;
     const test = () => {
       const current = peekRef.current;
       if (current?.via === "tap") return;
 
-      // Inside the card is not outside the reference. Without this the pointer
-      // would move off the words, onto the card it just opened, and be read as
-      // having left — closing the card out from under itself.
-      const card = cardRef.current?.getBoundingClientRect();
-      if (card && inside([card], cursor.x, cursor.y)) {
-        hold();
-        return;
-      }
-
       const found = zones().findIndex((boxes) => inside(boxes, cursor.x, cursor.y, HIT_SLOP));
 
       if (found === -1) {
-        // Only a footnote's own hover is this handler's to close. A link peek
-        // has its own leave event, and closing it from out here would fight it.
-        if (current && targetsRef.current.some((t) => t.anchor === current.anchor)) close();
+        if (current && holding(current.anchor)) hold();
+        else if (current) close();
         return;
       }
 
@@ -539,6 +657,7 @@ export default function ReferencePeek({
         !targetsRef.current.some((t) => t.anchor === current.anchor) &&
         inside(mergeLines(Array.from(current.anchor.getClientRects())), cursor.x, cursor.y)
       ) {
+        hold();
         return;
       }
       const source = readFootnote(root, anchor);
@@ -624,12 +743,9 @@ export default function ReferencePeek({
     });
 
     // Links keep their own behaviour on touch — tapping one should go there.
-    if (finePointer) {
-      links.forEach((a) => {
-        a.addEventListener("pointerenter", enter);
-        a.addEventListener("pointerleave", close);
-      });
-    }
+    // No leave of their own on a pointer: leaving is the proximity test's call,
+    // and a link's card is given the same latitude as a footnote's.
+    if (finePointer) links.forEach((a) => a.addEventListener("pointerenter", enter));
 
     return () => {
       clearTimers();
@@ -764,7 +880,6 @@ export default function ReferencePeek({
           aria-label={tapped ? `Reference ${source.label}` : undefined}
           tabIndex={tapped ? -1 : undefined}
           onPointerEnter={tapped ? undefined : hold}
-          onPointerLeave={tapped ? undefined : close}
         >
           <div className="peek-head">
             <span className="peek-index label">{source.label}</span>

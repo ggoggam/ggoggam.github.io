@@ -379,13 +379,22 @@ The connection back to the word is drawn, not implied, and it arrives in two
 stages. Reaching the reference — anywhere on the underlined phrase, or within
 5px of it — draws a 1px `--rule-strong` rectangle around the words, one per line
 where the phrase wraps, with the superscript folded into the line it hangs off
-rather than boxed on its own. A 7px square rides that border at the point
-nearest the pointer, filled `--paper` and stroked `--ink` so it stays legible
-over prose; it is the one mark in the overlay that goes to full ink, and it
-tracks the hand at frame rate. Staying draws the card, and a solid `--ink-faint`
-line from the square to the card's nearest corner — the only solid line in the
-overlay, because it is the one thing asserting the two belong together. The
-square keeps moving after the card lands; the leader pivots with it.
+rather than boxed on its own. A 7px square rides that border, filled `--paper`
+and stroked `--ink` so it stays legible over prose; it is the one mark in the
+overlay that goes to full ink, and it tracks the hand at frame rate. Staying
+draws the card, and a solid `--ink-faint` line from the square to the card's
+nearest corner — the only solid line in the overlay, because it is the one thing
+asserting the two belong together. The square keeps moving after the card lands;
+the leader pivots with it.
+
+Two rules keep that line off the words. The card is never allowed to cover the
+reference — if placement lands it there it is moved clear of the whole of it,
+under by preference and over when there is no room below. And the square departs
+from the side of the box the card is actually on, holding the hand's position
+along that side rather than taking the nearest edge, so the line leaves the
+outline and never re-enters it. Where a phrase wraps, every line offers a
+departure point and the one that wins is a clear run to the card; among clear
+runs, the one nearest the hand.
 
 Placement follows the hand, and keeps following it. On a pointer the card sits
 26px right and 22px below the cursor at up to 300px wide, flipping to the other
@@ -397,6 +406,13 @@ moving is a card you cannot reach. What is kept between frames is the offset fro
 the words rather than the point, so the card also rides its own line when the
 page scrolls. Below 640px it spans the measure itself and sits under the line, so
 its edges line up with the text it interrupts.
+
+Opening asks the pointer to be on the words; keeping the card open asks far less.
+Once it is up it is something the reader went and got, and it survives anywhere
+within 200px of either the reference or the card — which between them cover the
+whole route from one to the other — rather than closing the moment the hand
+drifts off the line. Before the card there is nothing to protect, so the outline
+is a light touch that tracks the pointer exactly and goes when it does.
 
 A pointer opens the card by hovering — 90ms on a footnote, which the reader
 reached by crossing its underline on purpose, and 320ms on a link, which prose is
