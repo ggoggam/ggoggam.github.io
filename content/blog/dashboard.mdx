@@ -34,12 +34,12 @@ Here is the final product (with some details redacted):
 When choosing frameworks, I prioritized maintainability.
 Since most lab members were already familiar with Python but had no experience with popular frontend frameworks like React, I implemented the web server using FastAPI, a widely-used ASGI framework in Python.
 
-For the user interface, I relied on vanilla HTML/CSS, Jinja templates, and DaisyUI[^1], a lightweight component library that enhances Tailwind CSS.
+For the user interface, I relied on vanilla HTML/CSS, Jinja templates, and DaisyUI[^1], a lightweight component library built on Tailwind CSS.
 
-For interactivity, I opted for HTMX. If you’re unfamiliar with HTMX, check out my previous [post](/blog/htmx).
+For interactivity, I opted for HTMX. If you're unfamiliar with HTMX, check out my previous [post](/blog/htmx).
 Since I avoided JavaScript runtimes, I included minified JS libraries for HTMX, Tailwind, and DaisyUI, along with their stylesheets, in the static folder.
 
-Thankfully, FastAPI makes serving static files incredibly simple:
+FastAPI makes serving static files simple:
 
 ```python
 from fastapi import FastAPI
@@ -51,10 +51,9 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 ## Templates
 
-The HTML templates were powered by **Jinja2 Fragments**[^2], which allowed partial rendering of templates by targeting specific block names. This setup, combined with HTMX, made templates concise and easy to maintain.
-This makes for a concise template files for easier maintenance when coupled with HTMX.
+The HTML templates were powered by Jinja2 Fragments[^2], which allowed partial rendering of templates by targeting specific block names. Combined with HTMX, this kept the template files short and easy to maintain.
 
-For example, here’s a snippet from index.html with a content block:
+For example, here's a snippet from index.html with a content block:
 
 ```html
 <!-- index.html -->
@@ -79,7 +78,7 @@ Depending on the route and request type, I could choose to return either the ent
 - /on-premise: Returns the content block for HTMX requests or the full page otherwise.
 - /on-premise/instances: Returns a partial block for lazy loading upon refresh.
 
-Here’s how these routes are implemented:
+Here's how these routes are implemented:
 
 ```python showLineNumbers
 # dependencies
@@ -128,11 +127,11 @@ async def get_on_premise_instances(
 ## Minor optimizations
 
 To gather server information remotely, I used [`paramiko`](https://www.paramiko.org/), a Python implementation of the SSHv2 protocol.
-This approach is safer than executing commands with subprocess or similar tools.
+This is safer than shelling out with subprocess or similar tools.
 
 Since commands like `nvidia-smi` (for GPU info) can be slow, I implemented lazy loading and pagination using HTMX. The `hx-trigger="revealed"` attribute in HTMX ensures that paginated endpoints are called only when the last loaded element is visible.
 
-Here’s an example of lazy loading:
+Here's an example of lazy loading:
 
 ```html
 {% if is_last %}
@@ -211,7 +210,7 @@ Here’s an example of lazy loading:
 To speed things up further, I implemented a time-to-live cache for service methods (all written as async functions).
 For details, refer to [my post](/blog/cache-async-py) on caching async functions.
 
-Additionally, I created a simple session management service to ensure that only authorized users could access the dashboard.
+I also wrote a simple session management service so that only authorized users could reach the dashboard.
 
 ## Dockerize & Deploy
 
@@ -286,9 +285,7 @@ jobs:
           asset_content_type: application/gzip
 ```
 
-This project took less than a day to implement, thanks to the simplicity of FastAPI and HTMX. After some minor tweaks for mobile responsiveness, the dashboard was well-received by my lab members.
-
-Hopefully, it will remain a valuable tool for the team.
+This project took less than a day to implement, thanks to how little FastAPI and HTMX ask of you. After some minor tweaks for mobile responsiveness, my lab members started using it.
 
 [^1]: https://daisyui.com
 

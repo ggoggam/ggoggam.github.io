@@ -9,7 +9,7 @@ tags:
   - Concurrency
 ---
 
-Async programming is crucial in making responsive and scalable web applications.
+Async programming is what keeps a web application responsive under load.
 In python, it is usually done with `asyncio`, allowing developers to write concurrent, suspendable (non-blocking) code with ease.
 However, there are times where we need to cache the output of the result of async functions.
 In synchronous python, it is usually done with cache implementations such as LRU (Least Recently Used) cache in `functools` package, but it is not applicable to async functions since they return coroutine, not function outputs. Hence we need to implement a cache, preferably in the form of decorator for a concise code.
