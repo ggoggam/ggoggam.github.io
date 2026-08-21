@@ -10,7 +10,9 @@ export const Route = createFileRoute("/about")({
 type Project = {
   name: string;
   description: string;
-  host: string;
+  /* Where the thing lives, standing in for a date: a domain for the two I run,
+     the repo path for the ones you read rather than visit. */
+  where: string;
   href: string;
 };
 
@@ -18,14 +20,49 @@ const PROJECTS: Project[] = [
   {
     name: "hitch",
     description: "A collaborative trip planner: build an itinerary with the people coming along.",
-    host: "hitch.ggoggam.dev",
+    where: "hitch.ggoggam.dev",
     href: "https://hitch.ggoggam.dev",
   },
   {
     name: "daytwo",
     description: "A shared calendar for couples, so two schedules read as one.",
-    host: "daytwo.ggoggam.dev",
+    where: "daytwo.ggoggam.dev",
     href: "https://daytwo.ggoggam.dev",
+  },
+  {
+    name: "shadcn-treeview",
+    description:
+      "A shadcn tree view that drags, drops, loads lazily, and moves nodes between trees.",
+    where: "ggoggam/shadcn-treeview",
+    href: "https://github.com/ggoggam/shadcn-treeview",
+  },
+  {
+    name: "vitre",
+    description:
+      "WebView automation for Kotlin Multiplatform: run page workflows on Android, iOS, and desktop.",
+    where: "ggoggam/vitre",
+    href: "https://github.com/ggoggam/vitre",
+  },
+  {
+    name: "openxet",
+    description:
+      "An open-source Rust server for the Xet protocol: content-addressable storage, frontend included.",
+    where: "ggoggam/openxet",
+    href: "https://github.com/ggoggam/openxet",
+  },
+  {
+    name: "simplecas",
+    description:
+      "Distributed content-addressable storage with an S3-compatible gateway and global BLAKE3 dedup.",
+    where: "ggoggam/simplecas",
+    href: "https://github.com/ggoggam/simplecas",
+  },
+  {
+    name: "lore-fsspec",
+    description:
+      "A Python fsspec filesystem for Lore, Epic's version control, so the usual data tools can read it.",
+    where: "ggoggam/lore-fsspec",
+    href: "https://github.com/ggoggam/lore-fsspec",
   },
 ];
 
@@ -41,8 +78,9 @@ function AboutPage() {
     <div>
       <AboutFragment />
 
-      {/* The two things I actually built and run, on my own domain. A row here
-          is the post-row construction with the host standing in for the date. */}
+      {/* The things I built — two I run on my own domain, the rest public repos.
+          A row here is the post-row construction with the location standing in
+          for the date. */}
       <section aria-labelledby="projects" className="mt-14">
         <h2 id="projects" className="label mb-1 border-b border-rule pb-4">
           side projects
@@ -65,7 +103,7 @@ function AboutPage() {
                   </p>
                 </div>
                 <span className="label shrink-0 pt-[0.4em] text-2xs tracking-[0.06em]">
-                  {project.host}
+                  {project.where}
                 </span>
               </div>
             </li>
