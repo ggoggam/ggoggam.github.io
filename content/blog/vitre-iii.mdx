@@ -1,0 +1,178 @@
+---
+title: Vitre - Handing the Page to an Agent (Part 3)
+excerpt: Snapshots and handles, an MCP server that ships no socket, and four sites driven at once
+author: ggoggam
+date: 2026-08-25
+published: true
+tags:
+  - Kotlin
+  - Multiplatform
+  - Agents
+  - MCP
+---
+
+Two years ago, in the [post that started this](/blog/webview-i), I wrote that I doubted language models would learn to plan for themselves "in a reasonable time frame."
+I was wrong on the timeline, and this post is partly me paying that off.
+Vitre now hands the page to an agent as first-class as it hands it to a workflow, and the two share every line of semantics below the adapter.
+
+[Part one](/blog/vitre-i) covered the steps, [part two](/blog/vitre-ii) covered the thread they run on.
+This one is about the caller that thread was quietly designed for.
+
+## An agent cannot use a selector
+
+Everything here follows from one fact: an agent has never seen the page.
+
+A workflow is written by someone with the page open in a browser, and its selectors are the residue of that — `#buy`, `.titleline > a`, `//div[@data-component-type='s-search-result']`.
+None of those can be produced by a caller who has not looked.
+Ask a model to produce one anyway and you are asking it to guess, and the guess fails silently, because `document.querySelector('#buy')?.click()` against a page with no `#buy` succeeds and does nothing.
+The step goes green. The button was never clicked.
+
+So the agent story rests on one new primitive: `Snapshot`.
+It walks the document and returns the interactive and text-bearing elements as an indented outline, each with a stable handle — roughly a third of the tokens of the raw HTML, carrying the part a model actually needs.
+
+```
+snapshot  ->  heading "Search results"      [ref=e1]
+                textbox value="keyboard"    [ref=e3]
+                link "Wireless keyboard"    [ref=e4]
+                button "Add to cart"        [ref=e6]
+
+click(ref=e6)
+```
+
+The agent never writes a selector; it reads handles out of a snapshot and passes them back. And because every element-addressing step already took a `Locator`, adding `Locator.Handle` made all of them handle-addressable for free.
+
+## Handles are designed to fail loudly
+
+A handle names an element the page has already shown us, and it lives *in the page*, in a registry on `window` belonging to the document that issued it.
+That gives it the right lifetime for nothing: a navigation destroys the document and the registry with it, so a handle from the previous page stops resolving at exactly the moment it stops meaning anything.
+
+Two rules make a wrong action impossible rather than merely unlikely.
+Numbers are never reused — a second snapshot mints fresh refs for new elements and keeps existing ones, so an agent that snapshots, thinks, then acts on `e3` acts on the same element it saw, not on whatever has since taken third place.
+And a failure to resolve is reported, not absorbed: selector steps turn a miss into `null` and carry on, which is correct for a selector and a lie for a handle, because a handle asserts the element *was seen*.
+So handle steps are vetted first, and the three failures are told apart because the agent's next move differs — `no-snapshot` means take one, `unknown` means it is from a previous page, `detached` means snapshot again because the page changed.
+
+### A bug worth keeping in the open
+
+The first handle expression was `(registry ? registry.get(ref) : null) || null`, unbracketed.
+Every unit test passed, including one asserting the generated click ended in `?.click()`.
+On a device, nothing happened when the button was clicked, and the step went green.
+
+`?.` binds tighter than `||`, so `X || null?.click()` groups as `X || (null?.click())` — the lookup runs, the method never fires.
+Asserting on the *text* of a generated script cannot catch this.
+The test now asserts that no operator binds loosely at the top level of any locator expression, which can.
+I keep this one in the docs because it is the exact failure mode the whole handle design exists to prevent — a wrong action that reports success — reappearing one level down in the code that implements it.
+
+## The MCP server that ships no socket
+
+`vitre-mcp` puts the vocabulary behind a Model Context Protocol server: thirteen tools — `snapshot`, `navigate`, `click`, `type`, `wait_for`, `extract`, `extract_rows`, `evaluate`, the two bridge messages, and lease acquire/release.
+Every tool maps onto a `WorkflowStep` rather than generating its own JavaScript, for the reason [part two](/blog/vitre-ii) opened with: a second implementation of "talk to a WebView" drifts from the first, invisibly, until a smoke test catches it months later.
+
+Two decisions are worth pulling out.
+
+**Sessions.** MCP is stateless by design, and a WebView is nothing but state.
+`WebViewSessions` is the join — the host registers its own WebViews by name, and the server can only reach the ones it was handed.
+That is what makes "the app decides what an agent may touch" true rather than aspirational.
+Omit the session name when exactly one is registered; with two, a call without a name fails and names them both, because a default that silently *picked* one would drive the wrong WebView and never say so.
+
+**Transport.** The module ships an in-process transport and no network transport, on purpose.
+A loopback socket over `adb forward` is convenient and it is a session leak: on Android a loopback listener is reachable by every other app on the device, needs no permission, and shows nothing in the UI, and the WebView it exposes is usually signed into the user's accounts.
+So what leaks is not "automation," it is the session.
+An app that truly wants a network transport implements `McpTransport` itself, which makes it a visible line in that app's code rather than a capability everyone acquires by taking the dependency.
+
+## Leases: ordering is not enough
+
+This is the one thing ordering cannot give an agent, and it took me a while to see it.
+
+The serializer from [part two](/blog/vitre-ii) makes every *operation* indivisible.
+It does not make a *sequence* indivisible, and every piece of real automation is a sequence:
+
+```
+agent: wait_for(".price")        the app's UI: user taps "next page"
+agent: extract(".price")   <-  reads the price on the page the user just opened
+```
+
+All four operations were correctly serialised and the answer is still wrong.
+`acquire_lease` holds the WebView across calls so nobody else's operation lands in the middle of the agent's sequence; a caller quoting no lease is not locked out, it queues.
+The expiry lives in the MCP module rather than in core, because "the client crashed between acquire and release" is a thing only that layer knows about, and a WebView held forever by a client that no longer exists is worse than any interleaving the lease was preventing.
+
+![The sample agent chat: a mocked model over a real MCP server, showing an extract_rows result as raw JSON and the answer derived from it — including a row that carried no price, left as an empty string instead of shifting the others.](/asset/vitre-agent.png)
+
+The chat above is a mocked model over a *real* MCP server, so every action on the page is an actual `tools/call`, shown with the JSON that came back rather than hidden behind the answer.
+Note the model's own remark at the bottom: one of four rows carried no price, and `extract_rows` put an empty string in that record instead of shifting every later row onto the wrong product.
+That is the row-scoping from [part one](/blog/vitre-i), paying off where a model would otherwise confidently misreport a table.
+
+## The same tools, for a Koog agent
+
+If the agent is written with [Koog](https://github.com/JetBrains/koog), `vitre-koog` hands it the same thirteen tools as typed Kotlin objects, with the same names, so a system prompt written for one adapter works against the other.
+The reason both adapters agree is that neither of them owns the semantics: `PageDriver`, the session registry, the leases, and the exact sentence a model is told about each tool all live one module down, in `vitre-agent`.
+There is a test that builds both adapters' descriptors and asserts every tool description and every argument description is byte-equal between them — an assertion that can only live in the module that can see both.
+
+Two things bit me here that are worth passing on, both found by running against a real model rather than a mock.
+
+An LLM client is not enough on its own — Koog resolves its HTTP transport through a service loader, so a build with just the Anthropic client compiles and then fails at the first request with `No KoogHttpClient.Factory provider found`.
+And the default agent loop stops early on a model that narrates: Anthropic models routinely answer with one message holding both a line of text and a tool call, and the default graph takes the text branch once tool results are in the history — so the run ends after the *first* tool call and delivers "I'll search now." as the final answer.
+The fix is a strategy that checks for tool calls before text at both branch points; with it, the same prompt drove the page through ten operations instead of one.
+
+There is also a plugin, `VitrePageLease`, that takes the lease for the length of an agent run and threads it into every call as metadata the model never sees. A lease exposed as a tool is one the model has to remember to acquire, thread through every later call, and release. It will eventually forget one, and the failure is silent.
+It is bounded by a TTL, because the page is held while the agent waits on the LLM, and a WebView the user can see that has stopped responding to its own app is a frozen UI.
+
+## Four sites at once
+
+The last piece is parallel lanes, because most useful automation is one workflow run against four sites — a price across four shops, a part number against four distributors — and running them one at a time wastes three quarters of the wall clock waiting on somebody else's network.
+
+A lane is one WebView with one site loaded as a top-level document.
+That last part matters more than it sounds: because a lane is a main frame, there is nothing between native and the document — no host page, no command routing, no handshake, and `X-Frame-Options` never enters the picture, because a top-level document is not being framed by anyone.
+Each lane has its own serializer, so operations are ordered against that lane and nothing else, which is what keeps four lanes from taking turns.
+
+What the lanes share differs by platform, and this is the one place the platforms are genuinely not alike:
+
+| | processes | shared main thread |
+|---|---|---|
+| iOS, four `WKWebView`s | four content processes | no — four main threads |
+| Desktop, four CEF browsers | four renderer processes | no — four main threads |
+| Android, four `WebView`s | **one** renderer process | yes — one JS main thread |
+
+Android WebView shares a single renderer across every `WebView` in the app, unlike Chrome.
+So on Android the lanes overlap on the *waiting* — four network round trips in flight at once, which is where the seconds are — and contend for one thread when they parse and run script.
+On iOS and the desktop they overlap on both.
+Neither arrangement serialises the part that takes seconds, which is the point.
+
+### The bug that turned four lanes back into one
+
+This is my favourite measurement in the whole project, because the symptom pointed nowhere near the cause.
+
+On the desktop, `getResourceHandler` — the hook that lets the app answer a request — is called on CEF's IO thread, and there is exactly one of those per browser *process*, shared by every lane.
+The first version fetched inline there, which is what Android's equivalent hook invites you to do.
+On the desktop that holds the one shared thread for a whole HTTP round trip, so no other lane can even *start* a request until it lets go.
+
+Four lanes against sites answering in 1500ms each:
+
+| | total | interceptions started |
+|---|---|---|
+| fetch on the IO thread | 6270ms | 1500ms apart |
+| interception off entirely | 1611ms | together |
+| fetch on a worker (the fix) | 1743ms | together |
+
+Four times one, exactly.
+The renderers were parallel the whole time; the network in front of them was a queue of one.
+The fix is to make the *decision* to intercept on the IO thread — it is pure predicate work — and hand the *fetch* to a worker, which CEF supports through a resource handler that returns "this is mine, the answer is coming later."
+
+### An arrangement I built and then deleted
+
+Android briefly had a different lane model: four `<iframe>`s inside one WebView, with the network interceptor stripping `X-Frame-Options` so sites that refuse to be framed would render anyway.
+It worked against the live web. I deleted it, and I want to record why, because the measurement is the useful part.
+
+Four `WebView`s produce one renderer process. One WebView with four iframes also produces one renderer process — I counted, with `ps` against a force-stopped baseline.
+So the parallelism argument for one WebView per lane is an iOS argument and does not transfer to Android at all.
+But neither does the *cost* argument for iframes: warm, the app's total memory was 192MB under iframes and 188MB under the pool, which is noise, because the memory lives in the shared renderer either way.
+
+So the pool was never faster on Android, and it was not meaningfully larger.
+What it was, is *smaller in failure modes*.
+Deleting the iframe host deleted a grid that collapsed unless it was `position: fixed`, a lane-adoption handshake with a minute-long retry window, and a navigation token to stop a stale `lane:ready` from satisfying the wrong wait. It also deleted `'unsafe-eval'` from the CSP of every site: a document-start script runs in the page's own world, so under iframes a strict-CSP site would load, answer the handshake, and then fail every step with a CSP violation.
+The pool loads a site top-level and asks the network stack for none of that.
+
+Choosing the arrangement with fewer ways to go wrong over the one that benchmarked identically is, in retrospect, the same instinct as the resubmit-once rule and the loud-handle rule and the in-process-only transport.
+The theme of all three posts, if there is one, is that in a system with this many callers the failures you can *see* are the cheap ones, and most of the design is spent making the invisible ones impossible.
+
+Vitre is on [GitHub](https://github.com/ggoggam/vitre) and published to Maven Central as `dev.ggoggam.vitre:vitre-core` and friends.
+If you build something that drives a page it does not own, I would like to hear how it breaks.
