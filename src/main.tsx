@@ -4,6 +4,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { createRouter } from "./router";
 import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "./app/globals.css";
+import "./app/notebook.css";
 
 const router = createRouter();
 const rootElement = document.getElementById("root")!;

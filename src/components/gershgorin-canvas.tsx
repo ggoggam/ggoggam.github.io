@@ -114,7 +114,7 @@ function draw(canvas: HTMLCanvasElement, m: number[][]) {
   });
 
   // Centres and labels ride above every disc so no wash sits on top of them.
-  ctx.font = `${fontSize}px "Spline Sans Mono", ui-monospace, monospace`;
+  ctx.font = `${fontSize}px "Geist Mono", ui-monospace, monospace`;
   ctx.textBaseline = "alphabetic";
   circles.forEach((circle) => {
     const c = toCanvasCoord(circle.center, 0);

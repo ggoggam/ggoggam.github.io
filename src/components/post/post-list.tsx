@@ -14,17 +14,16 @@ export default function PostList({ title, posts, selectedTag, onTagChange }: Pos
 
   return (
     <div>
-      {/* The nav already says which section this is, so the title only has to
-          exist for the document outline and for screen readers. */}
-      <h1 className="sr-only">{title}</h1>
+      <header className="archive-heading">
+        <h1>{title.toLowerCase()}</h1>
+      </header>
 
       {allTags.length > 0 && (
         // Twenty tags ahead of the first post is a wall, so the archive's index
         // stays folded until someone actually wants to narrow the list.
-        <details open={selectedTag !== undefined} className="group mb-2 border-b border-rule pb-4">
-          <summary className="label inline-flex cursor-pointer list-none items-baseline gap-2 py-1 transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
-            <span className="label-strong">{selectedTag ?? "all posts"}</span>
-            <span className="text-2xs">{allTags.length} tags</span>
+        <details open={selectedTag !== undefined} className="archive-filters group">
+          <summary className="filter-summary">
+            <span>{selectedTag ?? "tags"}</span>
             <svg
               aria-hidden="true"
               width="11"
@@ -46,9 +45,7 @@ export default function PostList({ title, posts, selectedTag, onTagChange }: Pos
               type="button"
               onClick={() => onTagChange(undefined)}
               aria-pressed={selectedTag === undefined}
-              className={`label px-1 py-1 text-2xs tracking-[0.06em] transition-colors hover:text-ink ${
-                selectedTag === undefined ? "label-strong underline" : ""
-              }`}
+              className="tag-filter"
             >
               all
             </button>
@@ -58,9 +55,7 @@ export default function PostList({ title, posts, selectedTag, onTagChange }: Pos
                 type="button"
                 onClick={() => onTagChange(selectedTag === tag ? undefined : tag)}
                 aria-pressed={selectedTag === tag}
-                className={`label px-1 py-1 text-2xs tracking-[0.06em] transition-colors hover:text-ink ${
-                  selectedTag === tag ? "label-strong underline" : ""
-                }`}
+                className="tag-filter"
               >
                 {tag}
               </button>
@@ -74,9 +69,12 @@ export default function PostList({ title, posts, selectedTag, onTagChange }: Pos
           Nothing tagged <span className="label label-strong">{selectedTag}</span> yet.
         </p>
       ) : (
-        <ul aria-label={selectedTag ? `Posts tagged ${selectedTag}` : "All posts"}>
+        <ul
+          className="post-feed"
+          aria-label={selectedTag ? `Posts tagged ${selectedTag}` : "All posts"}
+        >
           {filtered.map((post) => (
-            <PostPreview key={post.slug} {...post} />
+            <PostPreview key={post.slug} {...post} headingLevel={2} />
           ))}
         </ul>
       )}
