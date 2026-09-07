@@ -5,6 +5,7 @@ import { useRef } from "react";
 import { mdxComponents } from "@/components/mdx-component";
 import ReferencePeek from "@/components/post/reference-peek";
 import { useThemePref } from "@/lib/theme";
+import { ArrowIcon } from "@/components/site/arrow-icon";
 
 export type PostArticleProps = {
   slug: string;
@@ -31,7 +32,13 @@ export default function PostArticle({
   const articleRef = useRef<HTMLElement>(null);
 
   return (
-    <article ref={articleRef}>
+    <article ref={articleRef} className="reading-article">
+      <Link to={`/${type}`} className="article-back">
+        <span>
+          <ArrowIcon />
+        </span>{" "}
+        back to {type}
+      </Link>
       <header className="mb-10 border-b border-rule pb-8">
         <h1 className="title-display text-title">{title}</h1>
         {/* Metadata in the mono voice, at full contrast. Kind and date stay on

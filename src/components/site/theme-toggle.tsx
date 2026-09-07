@@ -25,14 +25,36 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={() => writeThemePref(next)}
-      // The visible word is the current theme, so the accessible name has to say
-      // which half of that is state and which half is what the press will do.
+      // Name both the current icon's state and the next action.
       aria-label={`Theme: ${LABEL[pref]}. Switch to ${LABEL[next]}.`}
       title={`Theme: ${LABEL[pref]}`}
-      // Widened to the longest label so the nav does not reflow as it cycles.
-      className="label block w-[9ch] px-2 py-1 text-right transition-colors hover:text-ink"
+      className="theme-toggle"
     >
-      {LABEL[pref]}
+      <svg
+        aria-hidden="true"
+        width="17"
+        height="17"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      >
+        {pref === "system" ? (
+          <>
+            <rect x="3" y="4" width="18" height="13" rx="3" />
+            <path d="M8 21h8m-4-4v4" />
+          </>
+        ) : pref === "light" ? (
+          <>
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
+          </>
+        ) : (
+          <path d="M20.5 14A9 9 0 0 1 10 3.5 9 9 0 1 0 20.5 14Z" />
+        )}
+      </svg>
+      <span className="sr-only">{LABEL[pref]}</span>
     </button>
   );
 }

@@ -2,7 +2,7 @@ export function AboutFragment() {
   return (
     <div id="about">
       <h1 className="title-display text-h2">About</h1>
-      <div className="mt-6 max-w-measure space-y-5 text-lede leading-[1.7]">
+      <div className="mt-6 space-y-5 text-[0.9375rem] leading-[1.8]">
         <p>
           Currently working as a research engineer at a medical artificial intelligence company
           (Lunit, if you are curious). Prior to this, I was a founding engineer at an early stage

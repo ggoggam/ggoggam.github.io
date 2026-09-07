@@ -4,17 +4,14 @@
 
 /* ---------------------------------------------------------------------------
    Tokens
-   Three voices: a bold neutral sans for titles, a mono for every piece of
-   metadata, and Pretendard for prose. The display face draws Hangul as well as
-   Latin, so a Korean title stays in the display voice; Pretendard still backs
-   the mono stack, which does not.
+   Pretendard carries titles and prose in both Hangul and Latin. Geist
+   Mono supplies the metadata and code register, backed by Pretendard for Hangul.
    --------------------------------------------------------------------------- */
 
 @layer base {
   :root {
-    --font-display:
-      "Noto Sans KR", "Pretendard Variable", Pretendard, "Helvetica Neue", Arial, sans-serif;
-    --font-mono: "Spline Sans Mono", "Pretendard Variable", Pretendard, ui-monospace, monospace;
+    --font-display: var(--font-body);
+    --font-mono: "Geist Mono", "Pretendard Variable", Pretendard, ui-monospace, monospace;
     --font-body: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui, sans-serif;
 
     /* Fluid scale. Every step travels between a 375px and a 1280px viewport, so
@@ -173,12 +170,7 @@
     color: var(--ink);
   }
 
-  /* The announcing voice. Noto Sans KR and Pretendard are both neutral sans
-     faces, in Hangul as much as in Latin, so almost none of the separation
-     comes from the drawing — weight and tracking carry it alone. That is why
-     this is 700 rather than the 600 a more distinctive display face could get
-     away with: at 600 a title next to body copy reads as emphasis, not as a
-     different voice. */
+  /* Headings share Pretendard with prose; size, weight, and tracking set hierarchy. */
   .title-display {
     font-family: var(--font-display);
     font-weight: 700;
@@ -195,6 +187,9 @@
 .prose {
   color: var(--ink);
   max-width: var(--measure);
+  /* Long URLs and identifiers must stay within the reading column on phones.
+     Preformatted code retains its own horizontal scroll container. */
+  overflow-wrap: anywhere;
 }
 
 .prose :where(strong) {

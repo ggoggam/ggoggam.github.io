@@ -46,8 +46,8 @@ surface is read under both daylight and a dark room.
   tags, published).
 - Posts are filterable by tag within `/blog` and `/til` via a `?tag=` search param.
 - A post's page carries a Giscus comment thread.
-- The home page shows the 6 most recent posts across both types, plus a generative Schotter canvas.
-- A red indicator appears on the wordmark when either section has a post from the last month.
+- The home page shows the 6 most recent posts across both types and an unframed Schotter drawing.
+  Clicking or keyboard-activating the drawing regenerates it; the SVG also renders in static HTML.
 - One TIL (`gershgorin`) embeds an interactive canvas component and is the only post using KaTeX math.
 - Static hosting only: no server, no database, no image pipeline. Everything ships as prerendered
   HTML plus assets in `public/`.
