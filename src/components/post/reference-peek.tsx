@@ -28,8 +28,8 @@ import { describeLink, type LinkPreview } from "@/lib/link-preview";
    rather than sprung. Arriving at the reference boxes it immediately: a hairline
    rectangle around the words, with a small paper-filled square riding that
    border under the hand. Staying draws the card beside the cursor, tethered back
-   to the square by a leader line, and the card goes on following the hand until
-   the hand leaves for it. Nothing about the first stage commits the reader to
+   to the square by a leader line. The card then stays put so the reader can
+   reach it without chasing it. Nothing about the first stage commits the reader to
    the second, and both stages fade rather than blink — which is why a dismissed
    peek is held mounted for the length of its own fade.
 
@@ -57,24 +57,17 @@ const LINE_GAP = 24;
 /* Approaching counts. Without the slop the outline snaps on at the exact glyph
    edge, which reads as a twitch rather than as a response. */
 const HIT_SLOP = 5;
-/* How far the card keeps chasing the hand. A line of text is 25px tall, so
-   testing the outline alone means the card stops the moment the pointer drifts
-   a few pixels off it — which is most of the time, and reads as a card that
-   does not follow at all. */
-const FOLLOW_SLOP = 80;
-/* How far the hand may drift before an open card is given up. Deliberately far
-   past the one that opened it: arriving somewhere should be harder than staying
-   there, or a card the reader is still reading closes for want of a steady
-   hand. */
-const KEEP_SLOP = 200;
+/* A little forgiveness at either edge. The corridor between reference and
+   card is handled separately, without keeping unrelated prose active. */
+const KEEP_SLOP = 8;
 /* Long enough to read as a fade, short enough that a card on its way out never
    stands between the reader and the one they are opening next. Matches the
    transition in globals.css. */
-const FADE = 150;
+const FADE = 80;
 /* A footnote is a deliberate target and opens quickly. Prose is full of links a
    pointer only crosses on its way somewhere, so those wait. */
-const FOOTNOTE_DELAY = 90;
-const LINK_DELAY = 320;
+const FOOTNOTE_DELAY = 70;
+const LINK_DELAY = 140;
 const CLOSE_DELAY = 160;
 
 const RESTING_HIGHLIGHT = "cited-phrase";
@@ -216,6 +209,29 @@ function corner(card: Box, x: number, y: number) {
 
 type Point = { x: number; y: number };
 
+/** The triangles from the opening point to the card's edges cover the route
+    into the card, even when viewport placement flips it above or to the left. */
+function inCorridor(card: Box, from: Point, point: Point) {
+  const left = card.left - KEEP_SLOP;
+  const top = card.top - KEEP_SLOP;
+  const right = card.left + card.width + KEEP_SLOP;
+  const bottom = card.top + card.height + KEEP_SLOP;
+  const corners = [
+    { x: left, y: top },
+    { x: right, y: top },
+    { x: right, y: bottom },
+    { x: left, y: bottom },
+  ];
+  const cross = (a: Point, b: Point, p: Point) =>
+    (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+  return corners.some((a, i) => {
+    const b = corners[(i + 1) % corners.length];
+    if (Math.abs(cross(from, a, b)) < 0.01) return false;
+    const sides = [cross(from, a, point), cross(a, b, point), cross(b, from, point)];
+    return sides.every((s) => s >= 0) || sides.every((s) => s <= 0);
+  });
+}
+
 /** Where the leader should leave a box: the side the card is actually on,
     holding the hand's position along it. Leaving by the facing side is what
     keeps the line outside the words instead of drawn through them. Falls back to
@@ -350,10 +366,6 @@ export default function ReferencePeek({
   const leavingRef = useRef(false);
   const leaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  useEffect(() => {
-    peekRef.current = peek;
-  }, [peek]);
-
   const settle = (going: boolean) => {
     leavingRef.current = going;
     setLeaving(going);
@@ -363,11 +375,15 @@ export default function ReferencePeek({
     clearTimeout(openTimer.current);
     clearTimeout(closeTimer.current);
     clearTimeout(leaveTimer.current);
+    openTimer.current = undefined;
+    closeTimer.current = undefined;
+    leaveTimer.current = undefined;
   };
 
   const dismiss = useCallback(() => {
     const current = peekRef.current;
     if (!current || leavingRef.current) return;
+    clearTimers();
     // Hand focus back to the anchor, but only if it is ours to hand back —
     // a tap somewhere else has already moved it on purpose.
     if (current.via === "tap" && cardRef.current?.contains(document.activeElement)) {
@@ -375,7 +391,9 @@ export default function ReferencePeek({
     }
     settle(true);
     leaveTimer.current = setTimeout(() => {
+      leaveTimer.current = undefined;
       settle(false);
+      peekRef.current = null;
       setPeek(null);
       setCarded(false);
       setBoxes(null);
@@ -383,64 +401,63 @@ export default function ReferencePeek({
   }, []);
 
   const close = useCallback(() => {
-    clearTimers();
+    // Leaving cancels an unopened card immediately. Repeated pointer moves
+    // must not postpone dismissal or cancel a fade already in progress.
+    clearTimeout(openTimer.current);
+    openTimer.current = undefined;
+    if (closeTimer.current !== undefined || leavingRef.current) return;
+    if (!cardRef.current) {
+      dismiss();
+      return;
+    }
     closeTimer.current = setTimeout(dismiss, CLOSE_DELAY);
   }, [dismiss]);
 
-  const hold = useCallback(() => clearTimeout(closeTimer.current), []);
+  const hold = useCallback(() => {
+    clearTimeout(closeTimer.current);
+    closeTimer.current = undefined;
+  }, []);
 
   /* One way in, whichever route found the reference. `delay` of zero means
      there is no hand to wait for — a tap, or a marker reached by keyboard — and
      the card goes straight up beside the words themselves. */
   const open = useCallback(
     (anchor: HTMLElement, source: Source, via: Peek["via"], delay: number) => {
+      if (peekRef.current?.anchor === anchor && !leavingRef.current) {
+        hold();
+        return;
+      }
+      // Once the reader is inspecting references, switching is immediate.
+      const showNow = delay === 0 || cardRef.current !== null;
       clearTimers();
       // Caught on the way out: it fades back in from wherever it had got to
       // rather than blinking.
       settle(false);
-      setPeek({ anchor, source, via });
-      setCarded(delay === 0);
-      if (delay === 0) {
-        originRef.current = { dx: 0, dy: 0 };
-        return;
-      }
-      openTimer.current = setTimeout(() => {
+      const next = { anchor, source, via };
+      peekRef.current = next;
+      setPeek(next);
+      setCarded(showNow);
+      const reveal = () => {
+        openTimer.current = undefined;
         const { x, y } = anchorPoint(anchor);
-        originRef.current = cursor.known
-          ? { dx: cursor.x - x, dy: cursor.y - y }
-          : { dx: 0, dy: 0 };
+        originRef.current =
+          delay !== 0 && cursor.known ? { dx: cursor.x - x, dy: cursor.y - y } : { dx: 0, dy: 0 };
         setCarded(true);
-      }, delay);
+      };
+      if (showNow) reveal();
+      else openTimer.current = setTimeout(reveal, delay);
     },
-    []
+    [hold]
   );
 
-  /* Where the card goes, recomputed every frame the hand moves.
-
-     It follows the cursor while the cursor is anywhere near the reference, and a
-     line of text is not much to be near — hence a radius rather than the outline
-     itself, which the hand leaves the moment it moves at all. Two things stop
-     it: drifting past that radius, which means the reader is on their way to the
-     card, and reaching the card, which a card that kept moving could never
-     allow. What is kept between frames is the offset from the words, not the
-     point, so the card also rides its own line when the page scrolls. */
+  /* Keep the opening offset from the reference. Pointer movement only updates
+     the tether; scrolling and resizing can still reposition the card. */
   const place = useCallback(
     (boxes: Box[]): Box | null => {
       const card = cardRef.current;
       const column = containerRef.current;
       const current = peekRef.current;
       if (!card || !column || !current) return null;
-
-      const held = card.getBoundingClientRect();
-      const chasing =
-        current.via !== "tap" &&
-        cursor.known &&
-        !inside([held], cursor.x, cursor.y) &&
-        inside(boxes, cursor.x, cursor.y, FOLLOW_SLOP);
-      if (chasing) {
-        const on = anchorPoint(current.anchor);
-        originRef.current = { dx: cursor.x - on.x, dy: cursor.y - on.y };
-      }
 
       const col = column.getBoundingClientRect();
       // On a phone the card takes the column's measure, so its edges line up
@@ -543,7 +560,7 @@ export default function ReferencePeek({
      somewhere before the browser gets a chance to paint it there. It has to be
      the parent's — React attaches refs in tree order as it runs layout effects,
      so anything nested would fire before the card's own ref exists. */
-  useLayoutEffect(draw, [draw, carded]);
+  useLayoutEffect(draw, [draw, carded, peek]);
 
   useEffect(() => {
     if (!peek || peek.via === "tap") return;
@@ -630,16 +647,16 @@ export default function ReferencePeek({
       return target ? outline(target) : mergeLines(Array.from(anchor.getClientRects()));
     };
 
-    /* Opening asks the pointer to be on the words; keeping it open asks far
-       less. Once a card is up it is something the reader went and got, and it
-       should not evaporate because the hand drifted off the line while they
-       were reading it — so it survives anywhere within KEEP_SLOP of either the
-       reference or the card, which between them cover the whole route from one
-       to the other. Before the card, there is nothing to protect: the outline is
-       a light touch that tracks the pointer exactly. */
+    /* Keep the reference, card, and route between them active. Moving elsewhere
+       starts one grace period, rather than renewing it on every frame. */
     const holding = (anchor: HTMLElement) => {
       const card = cardRef.current?.getBoundingClientRect();
       if (card && inside([card], cursor.x, cursor.y, KEEP_SLOP)) return true;
+      if (card) {
+        const on = anchorPoint(anchor);
+        const from = { x: on.x + originRef.current.dx, y: on.y + originRef.current.dy };
+        if (inCorridor(card, from, cursor)) return true;
+      }
       return inside(reach(anchor), cursor.x, cursor.y, card ? KEEP_SLOP : HIT_SLOP);
     };
 
@@ -649,8 +666,31 @@ export default function ReferencePeek({
       // the pointer meeting its reference again opens a fresh one.
       const current = leavingRef.current ? null : peekRef.current;
       if (current?.via === "tap") return;
+      // A portal can cover another citation. Reading the card takes priority
+      // over the article geometry underneath it.
+      const card = cardRef.current?.getBoundingClientRect();
+      if (current && card && inside([card], cursor.x, cursor.y)) {
+        hold();
+        return;
+      }
 
-      const found = zones().findIndex((boxes) => inside(boxes, cursor.x, cursor.y, HIT_SLOP));
+      const marker = document.elementFromPoint(cursor.x, cursor.y)?.closest("a[data-footnote-ref]");
+      // Crossing another cited phrase on the way into the current card should
+      // not replace what the reader was reaching for. An explicit marker still
+      // lets them switch references immediately, even where phrases overlap.
+      if (current && card && (!marker || marker === current.anchor)) {
+        const on = anchorPoint(current.anchor);
+        const from = { x: on.x + originRef.current.dx, y: on.y + originRef.current.dy };
+        if (inCorridor(card, from, cursor)) {
+          hold();
+          return;
+        }
+      }
+      const direct = targetsRef.current.findIndex((target) => target.anchor === marker);
+      const found =
+        direct !== -1
+          ? direct
+          : zones().findIndex((boxes) => inside(boxes, cursor.x, cursor.y, HIT_SLOP));
 
       if (found === -1) {
         if (current && holding(current.anchor)) hold();
@@ -848,7 +888,10 @@ export default function ReferencePeek({
 
     const schedule = () => {
       cancelAnimationFrame(queued);
-      queued = requestAnimationFrame(measure);
+      queued = requestAnimationFrame(() => {
+        measure();
+        draw();
+      });
     };
     // A reference that carries a plate grows once the image decodes, which is
     // after the first measurement — so watch the card, not just the window, or
@@ -863,7 +906,7 @@ export default function ReferencePeek({
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [peek, carded, containerRef]);
+  }, [peek, carded, containerRef, draw]);
 
   /* Marks the live anchor so it can hold full ink while its card is open, and
      says so to anything reading the page rather than looking at it. */
