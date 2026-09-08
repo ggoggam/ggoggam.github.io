@@ -9,6 +9,7 @@ This direction supersedes the earlier Skiper-inspired notebook treatment.
 An 880px browsing measure, generous outer margins, and a restrained grey surface.
 The homepage contains an unframed drawing followed by six dated post titles.
 The drawing is centred within the content column on both desktop and mobile.
+Small previous/next controls browse four pieces, showing one drawing at a time.
 
 The header contains only the Korean wordmark and three lowercase section links.
 The footer contains copyright, GitHub, source, and the theme control.
@@ -56,12 +57,16 @@ highlighting continue to follow the selected preference.
 
 ## Drawing and interaction
 
-Schotter is a seeded, prerenderable SVG of 216 squares. Its portrait proportions
-and single attribution let it sit like a small work on an otherwise empty wall.
+Schotter is a seeded, prerenderable SVG of 216 squares. Three original studies
+share its progression from order to disorder: Drift (rotating strokes), Orbits
+(displaced concentric circles), and Faults (fractured parallel rows). Their portrait
+proportions and single captions let each sit like a small work on an otherwise empty wall.
+Schotter appears first. Previous/next controls wrap through the collection and
+preserve each piece's current variation. Every piece is included in the static HTML.
 Clicking the drawing or activating it with Enter/Space generates a new variation.
 A descriptive button name and a polite live announcement support screen readers.
 
-Only the squares animate, and only in response to deliberate activation.
+Only the drawing marks animate, and only in response to deliberate activation.
 Reduced-motion preferences disable this interpolation. Links use simple
 underlines on hover/focus. Nothing animates on arrival or continuously.
 
@@ -80,6 +85,10 @@ footnotes, reference previews, and Giscus comments.
 - src/app/notebook.css: the browsing surface, updated theme tokens, responsive layout.
 - src/app/globals.css: shared prose, code, math, and reference styling.
 - src/components/schotter-canvas.tsx: the SVG drawing; existing component name retained.
+- src/components/generative-studies.tsx: three original SVG studies.
+- src/components/art-figure.tsx: shared regeneration, caption, and accessible description.
+- src/components/art-gallery.tsx: one drawing at a time, with previous/next controls.
+- src/lib/generative-art.ts: deterministic randomness shared by the drawings.
 - src/components/post/post-preview.tsx: dated title rows.
 - src/components/site/: plain navigation, footer, and theme control.
 
