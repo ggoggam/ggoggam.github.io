@@ -89,10 +89,30 @@
   grid-template-columns: 1fr;
   padding-block: 72px 90px;
 }
-.schotter-figure {
+.art-gallery-piece {
   justify-self: center;
   width: 236px;
   max-width: 100%;
+}
+.art-figure {
+  width: 100%;
+}
+.art-gallery-controls {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 8px;
+  color: var(--ink-muted);
+  font-size: 10px;
+}
+.art-gallery-controls button {
+  min-height: 32px;
+  padding-inline: 4px;
+}
+.art-gallery-controls button:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 .art-drawing {
   display: block;
@@ -105,7 +125,7 @@
   width: 100%;
   height: auto;
 }
-.schotter-square {
+.art-mark {
   transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .art-caption {
@@ -310,7 +330,7 @@
   .home-gallery {
     padding-block: 44px 56px;
   }
-  .schotter-figure {
+  .art-gallery-piece {
     width: 190px;
   }
   .art-caption {
@@ -346,7 +366,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .schotter-square {
+  .art-mark {
     transition: none;
   }
 }

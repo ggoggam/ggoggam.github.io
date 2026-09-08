@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getRecentPosts } from "@/lib/posts";
-import { SchotterCanvas } from "@/components/schotter-canvas";
+import { ArtGallery } from "@/components/art-gallery";
 import PostPreview from "@/components/post/post-preview";
 import { useSeo } from "@/lib/seo";
 
@@ -13,9 +13,7 @@ function HomePage() {
   return (
     <div>
       <h1 className="sr-only">꼬깜</h1>
-      <div className="home-gallery">
-        <SchotterCanvas />
-      </div>
+      <ArtGallery />
       <section aria-labelledby="recent">
         <h2 id="recent" className="section-heading">
           recent
