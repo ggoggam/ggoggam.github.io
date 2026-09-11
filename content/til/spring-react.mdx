@@ -9,30 +9,20 @@ tags:
   - Development
 ---
 
-# Fullstack Development
+Next.js is a common choice for apps that use React and render pages on the server. For task queues, scheduled jobs, and other background work, you may also need a backend framework.
+Go projects often use Fiber or Gin. For Java and Kotlin, Spring Boot is a popular choice, though comparing a framework with a language is not a direct comparison.
 
-Noadays it is common to use NextJS for fullstack and server side rendering applications.
-While it is powerful and easy to use out of the box, it does not provide common heavyweight server side features such as task queues, scheduled tasks, and background processing.
+We can let Spring Boot handle the backend and use plain React for the frontend. To serve both from one server, build the React app and have Spring Boot serve the output as static files.
 
-## Backend + React
+## Spring Boot
 
-Hence it is common to use some backend framework to delegate such tasks. For golang, it is common to see fiber or gin as the backend framework.
-For Java and Kotlin, Spring Boot has always been a popular choice, although it is not apples to apples comparison with golang.
-
-We can use Spring Boot to handle the backend and (vanilla) React to handle the frontend.
-The problem is that we do not want to have separate servers for the frontend and backend.
-One way to do this is by building the frontend then serving it as static files in the backend.
-
-# Spring Boot
-
-Generate a Spring Boot project by visiting [Spring Initializr](https://start.spring.io/).
-Then add the following dependecy:
+Create a project with [Spring Initializr](https://start.spring.io/) and add the development tools dependency:
 
 ```kotlin
 runtimeOnly("org.springframework.boot:spring-boot-devtools")
 ```
 
-Also add the following line in the `*Application.kt` file, which serves as the entry point for the Spring Boot application:
+In `*Application.kt`, the entry point for the Spring Boot app, add a view controller for the home page:
 
 ```kotlin
 @SpringBootApplication
@@ -43,13 +33,11 @@ class Application : WebMvcConfigurer {
 }
 ```
 
-# Vite
+## Vite
 
-Vite is a build tool that aims to provide a faster development experience for modern web projects.
-Build the frontend by watching the files for change, then output the files the `src/main/resources/static` directory,
-which is the default directory for serving static files in Spring Boot.
-
-First, add the following line in the `vite.config.ts` file:
+Vite builds the frontend and can rebuild it when source files change.
+Set its output directory to `src/main/resources/static`, where Spring Boot serves static files by default.
+Add this to `vite.config.ts`:
 
 ```typescript
 export default defineConfig({
@@ -59,7 +47,7 @@ export default defineConfig({
 });
 ```
 
-Then run the following commands:
+Then run these commands:
 
 ```shell
 $ pnpm init vite@latest
@@ -70,12 +58,10 @@ $ pnpm install
 $ vite build --watch --emptyOutDir
 ```
 
-# Watching for Changes for Static files
+## Watching static files for changes
 
-Spring Boot by default does not watch for changes in the static files.
-We have added the devtools dependency above, and it can both 1. restart and 2. reload (refresh) the server when the file changes.
-
-To enable the server to watch for changes in the static files, add the following line in the `application.yaml` file:
+Spring Boot does not watch static files for changes by default. The devtools dependency above supports restarting the server and reloading the page during development.
+Add these settings to `application.yaml` so the server watches the frontend output:
 
 ```yaml
 spring:
@@ -89,10 +75,9 @@ spring:
       static-locations: file:src/main/resources/static
 ```
 
-This ensures that the server will rebuild and restart when the static files change.
+The server will rebuild and restart when those files change.
 
-## Some other tips
+## A similar setup in Go
 
-With golang, it is common to use `fiber` nowadays. With the help of `air`, we can watch for changes in the backend files and restart the server.
-One of the great things about building a web app with golang is that build is reasonably fast (compared to Spring Boot), hence we can iterate quickly.
-It is also nice to have a single binary that will take care of everything, including the frontend and backend.
+With `fiber` in Go, `air` can watch backend files and restart the server when they change.
+Go builds are reasonably fast compared with Spring Boot, which makes it quicker to try changes. I also like having a single binary that serves both the frontend and backend.

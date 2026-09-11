@@ -10,27 +10,26 @@ tags:
   - Version Control
 ---
 
-For a while now I have been circling the same problem: how do you version _datasets_ when the data is large binaries?
-Git treats anything non-text as an opaque blob and falls over past a few gigabytes. Git LFS bolts on pointer files but dedupes nothing within a file, so changing one row of a Parquet shard re-uploads the whole thing.
-What I want is content-defined chunking (split files on content boundaries so an edit only touches the chunks it changed) paired with global, content-addressed deduplication, so a new dataset version costs only its new bytes.
-I have spent more time than I would like to admit surveying the options and never quite found a complete one.
+I have spent a while looking for a good way to version datasets made of large binary files.
+Git treats a non-text file as one object and struggles past a few gigabytes. Git LFS adds pointer files, but it cannot reuse unchanged parts within a file: changing one row in a Parquet file means uploading the whole file again.
+I want to split files according to their contents, so small edits affect only a few chunks. If the storage system identifies chunks by their contents and reuses them across files, each dataset version only needs storage for its new bytes.
+I spent more time than I would like to admit looking for something that did all of this.
 
-My own swing at it was [OpenXet](https://github.com/ggoggam/openxet): a Rust implementation of a [Xet protocol](https://huggingface.co/docs/xet/en/index)-compatible content-addressable storage server, the protocol Hugging Face uses to back model and dataset storage.
-It does the things I wanted to understand by building them: Gearhash CDC for stable chunk boundaries across revisions, Blake3 keyed hashing into aggregated Merkle trees, chunk-level dedup behind HMAC-protected hash queries, and the xorb/shard binary formats the protocol reconstructs files from.
-Building it taught me the shape of the problem cold, but it also made the gap obvious: a CAS server is only the storage half, not the _version control_ half, and nothing in the Python data stack can read from one without a pile of bespoke client code.
+I tried building part of it with [OpenXet](https://github.com/ggoggam/openxet), a Rust storage server compatible with the [Xet protocol](https://huggingface.co/docs/xet/en/index) that Hugging Face uses for models and datasets.
+It uses Gearhash to keep chunk boundaries stable across revisions, Blake3 keyed hashes organized into Merkle trees to identify content, and HMAC-protected hash queries to find chunks it already stores. It also implements the xorb and shard binary formats used to reconstruct files.
+Building those pieces taught me how the storage works. I still needed version control on top of it, and Python data tools would need custom client code to read the results.
 
-So when Epic Games open-sourced [Lore](https://epicgames.github.io/lore)[^1] in June (a new version control system written in Rust), it landed on exactly the itch I had been scratching.
-Unlike Git, Lore is built binary-first: it is content-addressed, stores files as reusable chunks with indexed lookup, represents repository state as Merkle trees over an immutable revision chain, and hydrates data on demand so you never have to materialize a 200GB project just to read one file out of it.
-It is aimed at game and multimedia teams who have spent a decade fighting Git LFS. But the same properties (content-defined chunk dedup, atomic revisions, a server of record that holds the bytes until you ask) are just what I had been chasing for dataset versioning, this time as a real VCS rather than a bare CAS.
+Epic Games released [Lore](https://epicgames.github.io/lore)[^1] in June. It is a Rust version control system designed for large binary files, aimed at game and multimedia teams that have struggled with Git LFS.
+Lore stores reusable chunks with indexed lookup. It represents repository state as Merkle trees, which identify contents through hashes, over a revision history that cannot be changed. Data downloads when needed, so reading one file does not require downloading a 200GB project.
+That gave me the pieces I wanted for datasets: reuse of unchanged chunks, revisions applied as a whole, and a central server that keeps the data until a client requests it.
 
-What I wanted, then, was to read datasets out of Lore _from Python_.
-The standard way to make a storage backend usable across the Python data stack is to implement an [fsspec](https://filesystem-spec.readthedocs.io/) filesystem, and fsspec already ships a `GitFileSystem` as a model to copy.
-So I built [`lore-fsspec`](https://github.com/ggoggam/lore-fsspec): the Lore analogue of `GitFileSystem`.
+To read Lore datasets from Python, I built [`lore-fsspec`](https://github.com/ggoggam/lore-fsspec).
+It implements the [fsspec](https://filesystem-spec.readthedocs.io/) filesystem interface used by Python data tools, following the existing `GitFileSystem` where it made sense.
 
-## What fsspec buys you
+## Reading Lore with existing Python tools
 
-pandas, pyarrow, Polars, DuckDB, zarr, and dask don't know anything about S3, GCS, or HTTP. They know about fsspec, and fsspec knows about everything else.
-Implement one interface (`ls`, `info`, `cat_file`, `open`, and so on), register it under a protocol, and every one of those tools can read from your backend through a URL:
+pandas, pyarrow, Polars, DuckDB, zarr, and dask can use fsspec to access storage such as S3, GCS, and HTTP without implementing each storage system themselves.
+A filesystem implements methods such as `ls`, `info`, `cat_file`, and `open`, then registers a protocol name. Tools can use that name in a URL:
 
 ```python
 import fsspec
@@ -46,22 +45,19 @@ with fsspec.open(url, "rt") as f:
     print(f.read())
 ```
 
-What that buys, concretely: `duckdb.sql("SELECT ... FROM read_parquet('lore://warehouse/events/*.parquet')")` reads a Parquet dataset straight out of a Lore repository at a given revision, with no glue code, because DuckDB already speaks fsspec.
-My job was only to make Lore one of the things fsspec knows about.
+For example, `duckdb.sql("SELECT ... FROM read_parquet('lore://warehouse/events/*.parquet')")` reads a Parquet dataset from a Lore repository at a given revision. DuckDB's existing fsspec support handles the connection once Lore is registered.
 
-## What is the address of a repository?
+## Identifying a repository
 
-The cleanest way to design a new fsspec backend is to find the closest existing one and copy its decisions until you have a reason not to.
-`GitFileSystem` is that precedent: it attaches to a _local clone_, reads the tree at a branch or revision, and exposes repo-relative paths.
-Most of it transfers unchanged, and `lore-fsspec` inherits all of it: repository-relative inner paths, the `:ref@inner` split parsed the way Git's is (quirks included), read-only unless you ask otherwise.
+`GitFileSystem` opens a local clone, reads its tree at a branch or revision, and exposes paths relative to the repository.
+`lore-fsspec` keeps those relative paths, Git's parsing of the `:ref@inner` form, including its quirks, and read-only access by default.
 
-The decision that does not transfer is the most basic one: what string names a repository.
-Git is distributed, so a clone is a full peer replica, and "point me at a directory on disk" really is the natural address.
-Lore is centralized. The server is the source of record, and a clone is a session handle onto it (a working copy, caches, and branch pointers) rather than a replica of the history.
-The natural address of a Lore repository is therefore its server URL, `lore://host:port/repo`, the same string `lore clone` takes.
-A filesystem that made you clone by hand first and then took the resulting directory would have no way to name the thing it is a filesystem for.
+The repository address needed a different approach.
+Git is distributed: a local clone is a full copy of the repository history, so a directory on disk is a useful address.
+Lore keeps the history on a central server. A local clone holds a working copy, caches, and branch pointers for accessing that server.
+The repository's address is its URL, `lore://host:port/repo`, which is also what `lore clone` accepts. Requiring a manually created local clone would leave callers to manage that connection themselves.
 
-So the constructor takes the repository URL, with the local-clone form as the alternative when you already have one:
+The constructor accepts the server URL or an existing local clone:
 
 ```python
 # Remote-first: address the repo by its Lore server URL.
@@ -71,33 +67,31 @@ fs = fsspec.filesystem("lore", path="lore://vcs.example.com:41337/my-project")
 fs = fsspec.filesystem("lore", path="/path/to/clone", ref="main")
 ```
 
-Disambiguating the two is one regex and one observation: the remote form always carries a `host:port/` authority, and the port digits are the tell.
-A local clone path never looks like `something:41337/`.
+A regular expression distinguishes the forms by the port number in `host:port/`. A local clone path does not have a server address such as `something:41337/`.
 
-## The clone goes bare
+## Managing the local clone
 
-There is a constraint underneath all of this that no amount of API design gets around: the `lore` client is _instance-rooted_.
-Every command takes a `repository_path` pointing at a local instance, and there is no clone-less remote mode to call into.
-Accepting a URL therefore cannot mean "talk to the server directly"; it can only mean "manage the local instance on the user's behalf."
+The `lore` client still requires a local instance. Every command takes a `repository_path`, and there is no remote mode that works without a clone.
+When a caller supplies a URL, the filesystem manages that local instance for them.
 
-So that is what it does. On first construction with a URL, the filesystem clones the repository bare, meaning branch and tree metadata with no materialized files, into a per-URL directory under `~/.cache/lore-fsspec` (`$XDG_CACHE_HOME` if set, or `cache_dir=` to override), named `<repo>-<sha256(url)[:12]>` so the mapping is stable.
-Later constructions against the same URL find the clone and reuse it.
-File content then streams lazily from the server of record as you read, and fetched fragments are retained in the local store, so a second read of the same file costs nothing.
-Writes stage, commit, and push back.
+On first use, it creates a bare clone: branch and tree metadata, with no file contents checked out.
+The clone lives under `~/.cache/lore-fsspec`, or `$XDG_CACHE_HOME` if set. Callers can override the location with `cache_dir=`.
+The directory name, `<repo>-<sha256(url)[:12]>`, is stable for each URL, so later filesystem instances reuse it.
+Reads fetch missing content from the server and keep the fragments locally. Reading the same content again needs no further download. Writes stage the changes, commit them, and push them back.
 
-The bare clone is cheap because it holds no payloads, and that is also the one place it bites.
-`mv` on a tracked file that was never materialized has nothing on disk to rename, so it materializes the content from the store at the destination first and stages the absent source as a removal.
-An unmaterialized _directory_ rename raises instead of guessing, because staging its tracked children would record deletions without re-adding them.
-There is also no cross-process lock around that first clone: two processes constructing the same URL for the first time race on `liblore`'s own instance lock. That is fine for single-process use and not fine for a cold parallel job.
+Keeping file contents off disk saves space but complicates moves.
+For a tracked file that has not been downloaded, `mv` reads the content from the store into the destination and stages the missing source as a removal.
+Moving an undownloaded directory raises an error: staging its tracked children would record deletions without adding them back at the destination.
 
-## Native coroutines, hence an AsyncFileSystem
+The initial clone also has no lock shared across processes. Two processes opening the same URL for the first time compete for `liblore`'s instance lock. Single-process use is fine, but a parallel job starting without a cached clone can fail.
 
-The other deliberate divergence from `GitFileSystem` came from the backend itself.
-`GitFileSystem` is synchronous because libgit2 is.
-Lore's Python bindings (`lore-vcs`, FFI over the Rust `liblore`) are not: every command returns an executor whose `collect_async()` resolves `asyncio` futures natively, not a thread-pool imitation of async.
-fsspec has a first-class answer for this in `AsyncFileSystem`. You implement the underscore coroutines (`_ls`, `_info`, `_cat_file`, and friends) and the framework synthesizes the blocking API on its own dedicated event-loop thread.
+## Letting reads run concurrently
 
-That choice pays off the moment you read more than one file:
+`GitFileSystem` runs calls synchronously because libgit2 does.
+Lore's Python bindings, `lore-vcs`, call the Rust `liblore` library through a foreign function interface (FFI). Each command returns an executor whose `collect_async()` resolves `asyncio` futures directly, without using a thread pool to imitate async behavior.
+
+fsspec's `AsyncFileSystem` fits this interface. I implement async methods such as `_ls`, `_info`, and `_cat_file`. fsspec provides the blocking versions on a separate event-loop thread, which schedules the async work.
+This allows several reads to make progress together:
 
 ```python
 fs = fsspec.filesystem("lore", path="/clone", ref="main", asynchronous=True)
@@ -105,58 +99,54 @@ data = await fs._cat_file("Content/Config/Game.ini")        # awaitable
 many = await fs._cat(["Content/A.ini", "Content/B.ini"])    # runs concurrently
 ```
 
-A fan-out read (`_cat`, `cat_ranges`) issues the underlying Lore commands concurrently rather than serially.
-Keeping that honest costs two small pieces of discipline.
-`_lore.py` is a two-function module that awaits the executor, raises on failure events, and filters the typed event stream down to the type a given call cares about, plus a synchronous twin for the two construction-time calls (clone, default-branch lookup) that must run _off_ the loop thread.
-And every disk touch goes through `anyio.Path` rather than builtin file I/O, because a blocking `read_bytes` on the loop thread would serialize exactly the fan-out this design exists to enable.
+Calls such as `_cat` and `cat_ranges` start the underlying Lore commands concurrently.
+The two-function `_lore.py` module waits for an executor, raises errors for failure events, and selects the event type the call needs. Its synchronous counterpart handles cloning and default-branch lookup during construction; those calls must run outside the event-loop thread.
 
-## Two gotchas that only a live server surfaces
+Disk access uses `anyio.Path`. A blocking `read_bytes` call on the event-loop thread would hold up the other reads.
 
-Neither of these is in the documentation, and both cost real time.
+## Problems I found with a live server
 
-### Paths resolve against the CWD
+Two undocumented behaviors took time to track down.
 
-Lore's global arguments carry a `repository_path`, and the obvious mental model is that file operations resolve relative to it.
-They do not.
-`lore` resolves OS file paths against the process working directory and discovers the repository from the path, so `repository_path` does not reroute per-file paths at all.
-In a library that runs on fsspec's shared loop thread, `chdir` is a non-starter: it is process-global, it races every other filesystem, and it would corrupt concurrent reads.
-The fix is a discipline rather than a workaround. Translate every repo-relative inner path to an absolute working-copy path (`os.path.join(clone_root, inner)`) before it crosses the FFI boundary, and never call `chdir`.
-That is one helper method (`_abs`) threaded through every read and write, and once it is in place the CWD sensitivity stops mattering.
+### File paths use the process working directory
 
-### A missing path is not a `FileNotFoundError`
+I expected file paths to resolve relative to `repository_path`.
+Instead, `lore` resolves them against the process's current working directory and discovers the repository from the resulting path. Setting `repository_path` does not change that behavior.
 
-`repository_dump`, the command behind `ls`, reports a path that doesn't exist with an undocumented error code (`Node not found`, 101 in `liblore` 0.8.3) that surfaces as a generic error.
-fsspec very much cares about the difference: `glob`, `walk`, and `exists` are all built on the assumption that a missing path raises `FileNotFoundError` and anything else is a real fault.
-Left alone, half of fsspec's traversal API breaks on an ordinary typo.
-`file_info`, luckily, has the clean contract `repository_dump` lacks, so `_ls` disambiguates by asking it: if the path is genuinely absent, `file_info` raises `FileNotFoundError` and that propagates; if the path exists, the original error was a real fault and gets re-raised untouched.
-That costs one extra round-trip, and only on the error path.
+Calling `chdir` would affect the whole process, including other filesystems using fsspec's shared thread, and could corrupt concurrent reads.
+I convert every repository-relative path to an absolute working-copy path with `os.path.join(clone_root, inner)` before passing it to the native library. The `_abs` helper does this for every read and write, without changing the working directory.
 
-## Two read paths
+### Missing paths arrive as generic errors
 
-Reads turned out to need two strategies, picked per call by what is both cheapest and correct.
+`repository_dump`, used by `ls`, reports a missing path as a generic error with the undocumented code `Node not found`, 101 in `liblore` 0.8.3.
+But fsspec's `glob`, `walk`, and `exists` expect `FileNotFoundError` for a missing path and treat other exceptions as failures. The generic error breaks ordinary file searches.
 
-When you read the checked-out ref and the file is fully materialized on disk (Lore reports `local_size == size`), `lore-fsspec` reads the bytes straight off the clone, with no network, no store handle, and no FFI round-trip for the payload.
-With a bare clone this path is simply never taken, which is the intended trade.
+`file_info` does distinguish missing paths correctly. When `repository_dump` fails, `_ls` checks with `file_info`.
+If the path is absent, its `FileNotFoundError` passes through. If the path exists, the original error is raised unchanged.
+Only failed calls pay for that extra request.
 
-For any other ref, or content that lives only in the server of record, it goes through Lore's content store: open a store handle once (lazily, guarded by a lock so a concurrent read fan-out can't open several and leak all but the last), look up the content address from the file's metadata, and fetch the fragment.
-With the default `offline=False` the handle hydrates missing fragments from the server on demand and retains them locally, so the fetch is once per fragment rather than once per read.
-Under `offline=True` a non-resident fragment raises a `FileNotFoundError` that says, in as many words, "run `fetch(...)` or allow lazy fetching."
-And since a bare clone can be missing tree metadata too, a missing `info` under `offline=True` says explicitly that the path may still exist on the server, rather than implying it doesn't exist at all.
+## Reading and downloading files
 
-Downloads take a third route. `fs.get` and `download` go through `storage_get_file`, the SDK-native primitive that writes a fragment straight to a destination path without ever building an in-memory blob.
-`AsyncFileSystem` has no usable default here, since the base `_get_file` is a `NotImplementedError`, so without it every `get` raises.
+For the checked-out revision, a file fully present on disk can be read directly from the clone. Lore reports this with `local_size == size`.
+`lore-fsspec` then needs no network request, content-store connection, or native-library call to retrieve the bytes. A bare clone never uses this path because it has no checked-out files.
 
-The honest caveat lives in `open_async`.
-You can get an async file object and `seek`/`read` it in chunks, but Lore's store has no ranged read: a content address fetches the _whole_ fragment or nothing.
-So the streamed file fetches the blob once on first access and serves every subsequent range from that in-memory buffer.
-That is one network fetch per file rather than bounded-memory streaming, and true streaming needs offset/length support in the Lore store that does not exist yet.
-Better to document the sharp edge than to let someone assume a `seek` is cheap.
+For other revisions or content still on the server, the filesystem uses Lore's content store.
+It opens one store connection when first needed, protected by a lock so concurrent reads cannot open several and lose track of all but one. It then looks up the file's content address in its metadata and fetches that fragment.
+With the default `offline=False`, missing fragments download on demand and stay in the local store. Each fragment is fetched once and reused on later reads.
 
-## Writes go through transactions, because Lore says so
+With `offline=True`, a missing fragment raises `FileNotFoundError` with the instruction to run `fetch(...)` or allow fetching.
+A bare clone may also lack tree metadata. If `info` cannot find a path offline, the error explains that the path may still exist on the server.
 
-Lore's native write model is _write content, stage, commit a revision_.
-That is a transaction whether you call it one or not, and fsspec happens to have a `Transaction` abstraction sitting right there.
-So writes go through it, and the contract is that everything in the block lands as exactly one revision, or nothing:
+Downloads through `fs.get` and `download` use `storage_get_file`, which writes a fragment directly to a destination without holding it all in memory.
+This needs its own implementation: the default `_get_file` in `AsyncFileSystem` raises `NotImplementedError`, so relying on it would make every `get` fail.
+
+There is a memory limitation in `open_async`.
+Its file object supports `seek` and `read`, but Lore's store can only fetch a whole fragment. On first access, the file loads that fragment into memory and serves subsequent reads from the buffer.
+This makes one network request per file, but it does not limit memory use to the requested range. Reading only part of a fragment would require offset and length support in Lore's store, which is not available yet. A small `seek` does not avoid the initial full download.
+
+## Committing writes together
+
+Lore writes content, stages it, and commits a revision. fsspec's `Transaction` lets the filesystem group those steps so everything in a block becomes one revision, or none of it does:
 
 ```python
 fs = fsspec.filesystem("lore", path="lore://vcs.example.com:41337/my-project", writable=True)
@@ -165,14 +155,15 @@ with fs.transaction(message="Import baked lighting", metadata={"job": "bake-4417
     fs.pipe_file("Content/Config/Game.ini", ini_bytes)
 ```
 
-Two guard rails hold that contract up.
-The filesystem is read-only unless constructed `writable=True` (mirroring `GitFileSystem`), and individual file writes additionally require an _open transaction_: a bare `pipe_file` outside a `with` block raises, because a stage with no commit leaves the working copy half-applied.
-On a clean exit the transaction issues a single `revision_commit` (and pushes, unless offline) regardless of how many files you wrote; on an exception it unstages and resets exactly the paths it touched, restoring the working copy.
-The `metadata` mapping above is persisted onto the committed revision as string-typed revision metadata, so provenance for a machine-generated commit (job id, source partition, pipeline run) travels with the revision rather than being encoded into the message and parsed back out later.
+As with `GitFileSystem`, callers must enable writes with `writable=True`.
+File writes also require an open transaction. Calling `pipe_file` outside a `with` block raises an error, since staging a file without committing would leave the working copy partly changed.
 
-Branch topology, by contrast, is _not_ folded into the write transaction.
-Creating, switching, and merging branches are exposed as explicit methods, because a merge can conflict and must never happen implicitly.
-A transaction can _target_ a branch (commit there in isolation, then restore your original branch on exit). Publishing is a separate, deliberate `merge()` call that aborts and raises with the conflicting paths rather than auto-resolving:
+A successful transaction issues one `revision_commit` for all the files and pushes unless offline. If an exception occurs, it unstages and resets only the paths it touched.
+The `metadata` mapping is saved on the revision as string values. A generated commit can carry its job ID, source partition, or pipeline run without putting those details in the message and parsing them later.
+
+Creating, switching, and merging branches are separate methods because merges may conflict and should happen explicitly.
+A transaction can write to a selected branch and restore the original branch on exit.
+A later `merge()` publishes the changes. If paths conflict, it aborts and reports them without resolving them automatically:
 
 ```python
 with fs.transaction(message="ingest Feb partition", branch="ingest-2026-02", create=True):
@@ -182,25 +173,21 @@ assert fs.ref == "main"   # the block restored the original branch on exit
 fs.merge("ingest-2026-02")  # clean merge → one revision; conflict → abort + raise
 ```
 
-That is the classic write-audit-publish pattern, expressed in three fsspec calls: stage new data on an isolation branch, audit it without exposing it on `main`, then publish atomically.
+This supports a write-audit-publish process: write new data on a separate branch, check it without exposing it on `main`, then publish the whole revision at once.
 
-## Was it worth it?
+## What the adapter makes possible
 
-The payoff is that none of the interesting code is mine.
-Once Lore is an fsspec backend, `duckdb.register_filesystem(fs)` and a `read_parquet('lore://...')` query just work; Polars reads DataFrames off `fs.open()` file objects with column projection intact; the write-audit-publish flow above is the standard data-engineering pattern with a content-addressed VCS underneath instead of object storage.
-Roughly fifteen hundred lines of binding turn a month-old game-asset VCS into a substrate the entire Python data stack can already use.
+With Lore registered in fsspec, `duckdb.register_filesystem(fs)` and `read_parquet('lore://...')` work with existing DuckDB support.
+Polars reads DataFrames from `fs.open()` objects while still selecting only the requested columns. The branch-and-merge process above supports the same write-audit-publish approach used with object storage.
+Roughly fifteen hundred lines connect a month-old version control system for game assets to these Python tools.
 
-The decision that mattered most was also the smallest: what string names a repository.
-Fidelity to `GitFileSystem` was worth keeping everywhere the topology matched (repo-relative paths, the `:ref@inner` grammar, read-only by default) and worth dropping in exactly the one place it didn't.
-A distributed VCS makes the local clone the thing you address; a centralized one makes it an implementation detail, and no amount of interface fidelity papers over that.
+Following `GitFileSystem` saved work where the behavior matched: relative paths, the `:ref@inner` syntax, and read-only defaults. Using a server URL for Lore let the adapter manage its local clone without making callers do it.
 
-It is also the closest I have come to the dataset-versioning setup I went looking for in the first place.
-OpenXet taught me what content-defined dedup costs to build, Lore supplies the versioning layer I did not want to write on top of it, and `lore-fsspec` is the seam that lets the Python data stack read the result without caring about any of it.
-That is not a finished answer: both Lore and this binding are pre-1.0, and the no-ranged-read limitation above is a hard limit. But it is the first time the three pieces have lined up at all.
+This is the closest I have come to the dataset setup I wanted. OpenXet taught me the cost of building chunk reuse, Lore supplies version control, and `lore-fsspec` lets Python tools read the data.
+Both Lore and the adapter are still pre-1.0, and fetching whole fragments remains a hard limit. Even so, this is the first time I have had all the pieces working together.
+fsspec itself needed no Lore-specific changes; registering the `lore` protocol was enough to use its existing tooling.
 
-None of this required fsspec to know that Lore exists. It only had to know the `lore` protocol, which is the whole reason a widely adopted interface is worth targeting: brand-new infrastructure inherits a decade of tooling for the price of one adapter.
+> `lore-fsspec` is pre-1.0 and follows Lore, whose on-disk formats and APIs are also explicitly unstable.
+> Install it with `pip install lore-fsspec` (Python 3.12+, MIT). The source is on [GitHub](https://github.com/ggoggam/lore-fsspec).
 
-> `lore-fsspec` is pre-1.0 and tracks Lore, which is itself pre-1.0 with explicitly unstable on-disk formats and APIs.
-> Treat both accordingly. `pip install lore-fsspec` (Python 3.12+, MIT); the source is on [GitHub](https://github.com/ggoggam/lore-fsspec).
-
-[^1]: Epic Games announced Lore on 2026-06-17. It is MIT-licensed, written in Rust, centralized, and content-addressed by design: repository state is a Merkle tree over an immutable revision chain, optimized for large binary assets with on-demand hydration. See the [Lore documentation](https://epicgames.github.io/lore/explanation/system-design/) and the [repository](https://github.com/EpicGames/lore).
+[^1]: Epic Games announced Lore on 2026-06-17. It is MIT-licensed and written in Rust. A central server stores content by its hashes, with repository state represented by Merkle trees over an unchangeable revision chain. It is designed for large binary assets that download as needed. See the [Lore documentation](https://epicgames.github.io/lore/explanation/system-design/) and the [repository](https://github.com/EpicGames/lore).

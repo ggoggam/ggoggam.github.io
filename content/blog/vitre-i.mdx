@@ -11,62 +11,52 @@ tags:
   - Automation
 ---
 
-[Two years ago](/blog/webview-i) I wrote about client-side scraping — doing the crawling and form-filling inside the app, on the user's device, instead of on a rented server driving a browser somewhere.
-The argument still holds: you spend the client's compute instead of your own, the user never round-trips to a scraping backend, and it is the user's own device signed into the user's own accounts doing the reading, which sidesteps a good deal of the legal awkwardness of scraping someone else's site from a datacenter.
+[Two years ago](/blog/webview-i), I wrote about scraping and filling forms inside an app on the user's device.
+That still appeals to me: the device does the work, the app avoids a trip to a scraping server, and the user reads sites through their own signed-in accounts. It also avoids some of the legal complications of scraping another site's data from a server.
 
-That post ended with "more details will be explained in the coming posts."
-It took me two years and a rewrite to have details worth explaining.
+That post promised more implementation details. It took two years and a rewrite to get here.
 The result is [Vitre](https://github.com/ggoggam/vitre), a WebView automation library for Kotlin Multiplatform.
-You describe what you want done to a page as a list of steps, and it runs them inside an embedded WebView on Android, iOS and the desktop — from your app, from a test, or from an LLM agent.
-This is the first of three posts about how it works. This one is about the shape of the thing; the [second](/blog/vitre-ii) is about the concurrency model that turned out to be load-bearing; the [third](/blog/vitre-iii) is about handing the page to an agent.
+You give it a list of actions, and it runs them in an embedded browser on Android, iOS, or desktop. Your app, a test, or a language-model agent can provide those actions.
+This post covers the library's main features. The [second](/blog/vitre-ii) explains how it coordinates callers, and the [third](/blog/vitre-iii) covers agents.
 
-## The mess this replaces
+## Coordinating calls to a WebView
 
-Every mobile app already embeds WebViews, and everyone eventually wants to do something to the page inside one: read a value, fill a form, wait for a table to render, talk to the page's own script.
-The way you do that today is `evaluateJavascript` with a callback, and the way it goes wrong is always the same.
+Apps often need to read a value, fill a form, wait for a table, or talk to a script inside a WebView.
+Calling `evaluateJavascript` and handling its callback works for a single action. Several callers make it harder.
 
-The calls race each other. A `waitFor` poll and the `extract` that depends on it interleave with a reload the user just triggered. They race the UI thread. And none of it survives a port: the Android version is `webView.post { }` around `evaluateJavascript`, the iOS version is `WKWebView.evaluateJavaScript` with subtly different semantics, and the two drift until a boolean reads as `true` on one platform and `"1"` on the other — which is a real bug I shipped, not a hypothetical.
+A `waitFor` check and the `extract` that depends on it can overlap with a user-triggered reload. Calls also have to run on the UI thread.
+The platform differences add another source of bugs: Android uses `webView.post { }` around `evaluateJavascript`, while iOS uses `WKWebView.evaluateJavaScript` with different return behavior.
+I shipped a bug where a boolean came back as `true` on one platform and `"1"` on another.
 
-Vitre's premise is that a page should be a thing you *drive*, not a string you interpolate JavaScript into.
-One step vocabulary, one ordering guarantee, one codebase for every platform.
+Vitre gives callers the same actions and ordering rules on every platform, implemented in a shared codebase.
 
-![The Vitre sample gallery on Android: an agent chat entry at the top, parallel-lane scenarios in the middle, then one card per single-page workflow.](/asset/vitre-gallery.png)
+![The Vitre sample gallery on Android, with an agent chat, scenarios that use several pages at once, and individual page workflows.](/asset/vitre-gallery.png)
 
-## Why not just run Chrome on a server?
+## Running on a device or a server
 
-The obvious objection is that headless Chrome already exists.
-Puppeteer and Playwright drive it well, the ecosystem is mature, and per session they can do things Vitre cannot — full DevTools access, network interception on every platform, request bodies, a dozen tabs at once.
-If the job is "scrape one site from one place," reach for them and stop reading.
+Puppeteer and Playwright already automate headless Chrome well. They have mature libraries and support features Vitre does not: full browser debugging access, network interception on every platform, request bodies, and many tabs in a session.
+For scraping one site from one place, I would use them.
 
-But the use cases from [the original post](/blog/webview-i) — aggregating a user's banks, searching their logged-in e-commerce accounts — need one authenticated, personalized browser *per user*.
-That is where running Chrome on a server stops being a tooling choice and starts being a business you may not want to be in.
+The uses in [the original post](/blog/webview-i), such as collecting information from a user's banks or searching their signed-in shopping accounts, need a personalized browser session for each user.
+Hosting all those sessions has several costs.
 
-**You rent a browser per user.**
-A headless Chrome context is hundreds of megabytes and a core under load, and one isolated logged-in session per active user is a linear cost that grows with your user base, on the most expensive compute you rent.
-This is exactly the centralized "server hosting instances of client devices" I pointed at two years ago.
-Vitre spends the browser the user already paid for.
+A headless Chrome context can use hundreds of megabytes and a CPU core under load. Each active user needs an isolated signed-in session, so server costs grow with the user count.
+Vitre uses the browser on a device the user already owns.
 
-**You become the custodian of everyone's session.**
-A server-side browser reading a user's bank means that user's credentials or live cookies sit on your infrastructure.
-Now you are a breach target and, depending on the data, a regulated custodian — and no amount of scaling fixes the fact that warehousing millions of logins is a liability rather than a feature.
-Client-side leaves the session on the device where it already is.
+A hosted browser also puts the user's credentials or live cookies on your infrastructure. That makes the service a target for breaches and, depending on the data, may bring duties as a regulated custodian.
+Running on the device keeps the session there.
 
-**You lose the IP arms race.**
-A few thousand users behind one datacenter IP range gets rate-limited, CAPTCHA'd and blocked, because sites treat datacenter traffic as hostile by default.
-The way out is residential proxy pools, which is another linear cost and a permanent fight.
-Traffic from the user's own device does not have to look like the user — it *is* the user, on their own residential IP and real session.
+Sites commonly rate-limit, challenge with CAPTCHAs, or block thousands of users sharing a datacenter IP range. Residential proxy pools add another cost that grows with usage and requires ongoing maintenance.
+Requests from the user's device already use their own connection, residential IP, and session.
 
-**The legal posture is worse.**
-Datacenter scraping a third party is the position courts and terms of service treat most harshly.
-A user automating their own interaction with a site they are logged into is on different footing.
+There is also a legal difference. Courts and site terms tend to treat datacenter scraping more harshly than a user automating interactions with a site they are signed into.
 
-The one-line version: running the browser server-side makes you rent a browser, an IP, and a liability per user; running it on the client borrows all three from the user for free.
-What you give up is central control, and on iOS the ability to rewrite a response header — but that trade is the whole reason this library targets the device instead of the datacenter.
+Running on the device gives up central control. On iOS, it also gives up the ability to rewrite response headers. I accepted those limits to keep the browser and session with the user.
 
-## Steps, not scripts
+## Describing actions as steps
 
-The core is a small sealed set of steps: `Navigate`, `LoadHtml`, `WaitFor`, `Click`, `Input`, `Extract`, `ExtractRows`, `Snapshot`, `EvaluateJs`, `PostMessage`, `AwaitMessage`.
-You assemble them with a DSL and hand the list to a `WorkflowEngine`, which walks it and emits an event per step.
+Vitre defines a fixed set of steps: `Navigate`, `LoadHtml`, `WaitFor`, `Click`, `Input`, `Extract`, `ExtractRows`, `Snapshot`, `EvaluateJs`, `PostMessage`, and `AwaitMessage`.
+A small Kotlin builder, or DSL, assembles them into a list. `WorkflowEngine` runs the list and emits an event for each step.
 
 ```kotlin
 val workflow = workflow("hn-top-story", "Hacker News top story") {
@@ -81,19 +71,15 @@ WorkflowEngine(controller).run(workflow).collect { event ->
 }
 ```
 
-There is one design decision here that trips people up, so I want to be explicit about it early: the block is a *builder*, not a script.
-It runs once, up front, to assemble the step list.
-Ordinary Kotlin control flow inside it chooses what the workflow *contains*, but it cannot branch on the page, because when the block runs the page has not been touched yet.
-An `if` in there decides which steps exist, not which steps run given what an earlier step found.
+The builder runs once before the workflow starts. Kotlin control flow inside it chooses which steps go into the list; it cannot react to the page because the page has not been touched yet.
+An `if` therefore cannot use the result of an earlier step.
 
-That sounds like a limitation, and it is, but it buys two things.
-A workflow is a value: you can build it, log it, ship it as data, and it is equal to itself.
-And it is exactly the shape an agent needs, because an agent's steps arrive as JSON rather than as Kotlin — the same `WorkflowStep` constructors the DSL calls are public, and that is what the MCP server in [part three](/blog/vitre-iii) builds against.
+This limits branching, but makes a workflow ordinary data: it can be built, logged, sent elsewhere, and compared for equality.
+It also lets an agent send steps as JSON. The `WorkflowStep` constructors used by the DSL are public, and the MCP server in [part three](/blog/vitre-iii) calls the same constructors.
 
-## Reading a whole table in one step
+## Reading a table
 
-The step I reach for most is `ExtractRows`, because it is the one repeated `Extract` cannot fake.
-It returns one JSON record per matching row, with each column resolved *within* that row.
+I use `ExtractRows` often. It returns one JSON record per matching row, with each column read within that row:
 
 ```kotlin
 extractRows(rows = xpath("//li[@data-sku]"), into = "results", limit = 10) {
@@ -105,13 +91,12 @@ extractRows(rows = xpath("//li[@data-sku]"), into = "results", limit = 10) {
 }
 ```
 
-The scoping is the whole point.
-If you extract prices and SKUs with two independent selectors and zip them, one row missing a price shifts every later price onto the wrong product, silently.
-Resolving each column inside its row means a missing price is an empty string in *that* record and nothing else moves.
+Reading all prices and all SKUs separately, then pairing them by position, fails when a row has no price. Every later price gets paired with the wrong product.
+`ExtractRows` keeps the columns together. A missing price becomes an empty string in that row's record.
 
-## Three ways to name an element
+## Finding an element
 
-Every element-addressing step takes a `Locator`, and there are three kinds.
+Every step that acts on an element takes a `Locator`. There are three forms:
 
 ```kotlin
 css("#results .item")      // the common case: short, familiar, fast
@@ -119,36 +104,33 @@ xpath("//li[@data-sku]")   // when you need more
 handle("e7")               // an element a snapshot already found
 ```
 
-A bare string still means CSS, so the shorthand stays short.
-XPath earns its place where CSS genuinely cannot reach: matching on visible text, walking *up* the tree with `ancestor::` (CSS has no parent combinator), selecting an attribute as a node, positional predicates, `count()`.
-Neither pierces shadow DOM — that is the page's doing, not the query language's.
+A plain string means CSS.
+XPath supports searches CSS cannot express: matching visible text, walking to ancestors with `ancestor::` because CSS has no parent combinator, selecting an attribute as a node, filtering by position, and using `count()`.
+Neither searches through shadow DOM, the separate document trees used by some page components.
 
-The third kind, `handle`, is the agent's locator, and it behaves differently on purpose.
-CSS and XPath describe *how to search*; a handle *names* an element the page has already shown you.
-It is issued by a `Snapshot`, it lives in the document that issued it, and it dies when that document navigates away.
-So a handle from the previous page fails loudly instead of quietly resolving against a same-shaped element on the new one.
-I will come back to snapshots and handles in [part three](/blog/vitre-iii), because they are what makes an agent possible at all.
+A `handle` names an element already found by a `Snapshot`.
+CSS and XPath describe a search. A handle refers to a particular element in the document that issued it and expires when navigation replaces that document.
+Using one from a previous page raises an error instead of finding a similar element on the new page.
+[Part three](/blog/vitre-iii) explains how agents use snapshots and handles.
 
-## Typed reads, so `evaluateJs` stops lying
+## Getting the same return values on every platform
 
-`evaluateJs` returns the JSON encoding of whatever the expression produced, on every platform.
-That one contract — everything returns JSON — is the thing every platform was made to agree on, and it lets you decode a value instead of string-matching it.
+`evaluateJs` returns a JSON-encoded result on every platform. Callers can decode it into a type instead of comparing strings:
 
 ```kotlin
 val ready: Boolean = controller.evaluate("document.readyState==='complete'")
 val rows: List<Product> = controller.evaluate("Array.from(document.querySelectorAll('li')).map(toRow)")
 ```
 
-Getting there was more work than it should have been, because the platforms disagree about the most basic thing.
-WebKit hands back a Foundation object whose `description` prints JS `true` as the string `"1"`; Android returns JSON `"true"`.
-So iOS wraps every script in `JSON.stringify` and the desktop does the same on the way back over CEF's message router, and only then does `"true"` mean `true` everywhere.
-This is the kind of divergence that survives testing for months because both platforms return *a* value and neither returns an error. The [next post](/blog/vitre-ii) is largely about bugs of exactly this flavour.
+WebKit returns a Foundation object whose `description` prints JavaScript `true` as `"1"`. Android returns JSON `"true"`.
+iOS now wraps scripts in `JSON.stringify`; desktop does the same before returning through the Chromium Embedded Framework (CEF) message router. This makes `"true"` decode as `true` everywhere.
+The mismatch survived testing for months because both platforms returned a value without an error. The [next post](/blog/vitre-ii) covers more bugs like it.
 
-## Talking to a page you own
+## Exchanging messages with a page you own
 
-If the page is yours — a hybrid app screen, not a third-party site — scraping it is the wrong tool and the bridge is the right one.
-`PostMessage` sends a `MessageEvent('vitre')` into the page; `AwaitMessage` waits for `window.vitre.postMessage` coming back.
-Payloads are `@Serializable` classes, not hand-typed envelope strings.
+For an app's own web screen, the native app and page can exchange messages directly.
+`PostMessage` sends `MessageEvent('vitre')` into the page. `AwaitMessage` waits for a reply sent through `window.vitre.postMessage`.
+Payloads use `@Serializable` classes, so callers do not have to build message strings by hand.
 
 ```kotlin
 @Serializable data class Ack(val seen: Boolean)
@@ -160,25 +142,23 @@ click("#pay")
 awaitMessage(type = "payment-token", into = "token", timeoutMs = 5_000)
 ```
 
-Because a workflow is a builder, the reply cannot come back into the block — it lands in a variable, and the typing picks up where the value does: `event.decodePayload<Token>("token")`.
-When you want the round trip as a single expression, you want the host API instead, `controller.bridge.request<Ack, Token>(...)`, which posts and correlates the reply for you.
-The subtlety of why post-then-await does not race — the page can reply *before* you start waiting — is one of the things [part two](/blog/vitre-ii) has to get right.
+The workflow builder has already finished by the time a reply arrives. The reply goes into a workflow variable and can be decoded with `event.decodePayload<Token>("token")`.
+Host code can use `controller.bridge.request<Ack, Token>(...)` to send a request and match its reply in one call.
+The page may reply before the wait starts; [part two](/blog/vitre-ii) explains how the bridge handles that.
 
-## A run, on screen
+## Watching a workflow run
 
-The sample app is a gallery of these workflows, and running one shows the page on top with every step underneath and what it actually did.
+The sample app lists workflows. Running one shows the page above a record of each step and its result.
 
-![A completed workflow in the sample runner: the page on top, a nine-step trace underneath, with steps addressing elements by the handles a snapshot issued rather than by selectors.](/asset/vitre-run.png)
+![A completed workflow with the page above nine recorded steps. The steps use element handles from a snapshot.](/asset/vitre-run.png)
 
-The same `composeApp` runs on iOS and the desktop from the same source; past 720dp wide the list and the runner sit side by side instead of taking turns.
-`vitre-core` has no Compose dependency at all — the DSL, the engine, the bridge and the controllers are pure Kotlin Multiplatform, and the Compose layer is a thin `VitreWebView` on top for people who want it.
+The same `composeApp` source runs on iOS and desktop. Above 720dp wide, the workflow list and runner appear side by side.
+`vitre-core` has no Compose dependency. The builder, engine, message bridge, and controllers use Kotlin Multiplatform; `VitreWebView` adds a small Compose wrapper for apps that need it.
 
-## What is deliberately out of scope
+## Why it targets mobile and desktop
 
-The browser is not a target, and it cannot be.
-The whole value proposition rests on the app being the one thing that can answer for the network — relax CORS, serve a fixture, read a first-party cookie jar.
-In a browser tab you have none of that; you have the same-origin policy the page's own author has, and a general-purpose automation framework there is impractical for reasons that have nothing to do with Vitre.
-So Vitre is mobile and desktop only, and honest about it.
+Vitre relies on the native app's access to the network: relaxing cross-origin resource sharing (CORS) restrictions, serving test data, or reading the site's cookies.
+A browser tab has the same-origin restrictions of the page it hosts and lacks that native access. Those limits make this approach impractical as a general browser automation library.
+Vitre therefore targets mobile and desktop apps.
 
-That is the shape of the library.
-The [next post](/blog/vitre-ii) is about the part I underestimated by an order of magnitude: what happens when the UI, a workflow, and an agent all want to touch the same WebView at the same time, on a thread none of them are allowed to block.
+The [next post](/blog/vitre-ii) covers the work I underestimated: letting the UI, a workflow, and an agent use one WebView without blocking its thread or interfering with each other's operations.

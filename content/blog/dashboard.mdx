@@ -9,13 +9,13 @@ tags:
   - Dashboard
 ---
 
-As I was wrapping up my academic work, I took on a quick side project to build a dashboard for monitoring server statuses in my lab.
-There used to be a similar tool created by a former lab member, but it had become outdated and was no longer maintained.
-My primary focus for this new dashboard was to make it: 1. simple 2. maintainable 3. modestly secure and 4. look nice.
+As I was wrapping up my academic work, I built a dashboard to monitor the servers in my lab.
+A former lab member had made a similar tool, but it was outdated and no longer maintained.
+I wanted something simple to maintain, with basic security and a UI that looked nice.
 
-Here is the final product (with some details redacted):
+This is the finished dashboard, with some details redacted:
 
-### Home (Login)
+### Login page
 
 ![dashboard home](/asset/home.png)
 
@@ -23,23 +23,19 @@ Here is the final product (with some details redacted):
 
 ![dashboard](/asset/dashboard.png)
 
-### Dashboard with Details
+### Server details
 
 ![dashboard](/asset/dashboard_detail.png)
 
-## Setup
+## Choosing the tools
 
-### Framework Choice
+Most lab members knew Python but had no experience with frontend frameworks such as React. I chose FastAPI, a widely used Python web framework, so they would have an easier time maintaining it.
 
-When choosing frameworks, I prioritized maintainability.
-Since most lab members were already familiar with Python but had no experience with popular frontend frameworks like React, I implemented the web server using FastAPI, a widely-used ASGI framework in Python.
+For the UI, I used plain HTML and CSS, Jinja templates, and DaisyUI[^1], a small component library built on Tailwind CSS.
+HTMX handles the page updates; I described it in an earlier [post](/blog/htmx).
+I put the minified JavaScript libraries and stylesheets for HTMX, Tailwind, and DaisyUI in the static folder, so I did not need a separate JavaScript runtime.
 
-For the user interface, I relied on vanilla HTML/CSS, Jinja templates, and DaisyUI[^1], a lightweight component library built on Tailwind CSS.
-
-For interactivity, I opted for HTMX. If you're unfamiliar with HTMX, check out my previous [post](/blog/htmx).
-Since I avoided JavaScript runtimes, I included minified JS libraries for HTMX, Tailwind, and DaisyUI, along with their stylesheets, in the static folder.
-
-FastAPI makes serving static files simple:
+FastAPI can serve that folder directly:
 
 ```python
 from fastapi import FastAPI
@@ -51,9 +47,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 ## Templates
 
-The HTML templates were powered by Jinja2 Fragments[^2], which allowed partial rendering of templates by targeting specific block names. Combined with HTMX, this kept the template files short and easy to maintain.
-
-For example, here's a snippet from index.html with a content block:
+Jinja2 Fragments[^2] lets the server render a named block from a template. With HTMX requesting those blocks, the template files stayed short and easy to maintain.
+This part of index.html defines a content block:
 
 ```html
 <!-- index.html -->
@@ -73,12 +68,12 @@ For example, here's a snippet from index.html with a content block:
 {% endblock %}
 ```
 
-Depending on the route and request type, I could choose to return either the entire template or just parts of it. For instance:
+Each route can return a whole page or just a block, depending on the request:
 
-- /on-premise: Returns the content block for HTMX requests or the full page otherwise.
-- /on-premise/instances: Returns a partial block for lazy loading upon refresh.
+- /on-premise returns the content block for HTMX requests and the full page otherwise.
+- /on-premise/instances returns a block loaded separately when the page refreshes.
 
-Here's how these routes are implemented:
+The routes look like this:
 
 ```python showLineNumbers
 # dependencies
@@ -124,14 +119,12 @@ async def get_on_premise_instances(
     )
 ```
 
-## Minor optimizations
+## Loading server details as needed
 
-To gather server information remotely, I used [`paramiko`](https://www.paramiko.org/), a Python implementation of the SSHv2 protocol.
-This is safer than shelling out with subprocess or similar tools.
+I used [`paramiko`](https://www.paramiko.org/), a Python library for SSHv2, to run commands on the servers. This is safer than starting a shell through subprocess or a similar tool.
 
-Since commands like `nvidia-smi` (for GPU info) can be slow, I implemented lazy loading and pagination using HTMX. The `hx-trigger="revealed"` attribute in HTMX ensures that paginated endpoints are called only when the last loaded element is visible.
-
-Here's an example of lazy loading:
+Commands such as `nvidia-smi`, which reports GPU information, can be slow. I split the results into pages and used HTMX to load them as needed.
+The `hx-trigger="revealed"` attribute requests the next page only when the last loaded element becomes visible:
 
 ```html
 {% if is_last %}
@@ -207,14 +200,12 @@ Here's an example of lazy loading:
 {% endif %}
 ```
 
-To speed things up further, I implemented a time-to-live cache for service methods (all written as async functions).
-For details, refer to [my post](/blog/cache-async-py) on caching async functions.
+I also cached the results of the async service methods, with an expiration time for each result. My [post](/blog/cache-async-py) on caching async functions covers the implementation.
+A small session service restricts the dashboard to authorized users.
 
-I also wrote a simple session management service so that only authorized users could reach the dashboard.
+## Packaging and deploying
 
-## Dockerize & Deploy
-
-To ensure consistency and security, I containerized the application using Docker. I chose the lightweight slim-buster image as the base for Python:
+I packaged the app in Docker for a consistent environment and to help with security, using the small slim-buster Python image:
 
 ```docker
 FROM python:3.10.8-slim-buster
@@ -231,7 +222,7 @@ COPY src /code
 ENTRYPOINT [ "python", "main.py" ]
 ```
 
-I also created a GitHub workflow to automate the release process:
+A GitHub workflow handles releases:
 
 ```yaml
 name: Build Docker Image and Release
@@ -285,7 +276,7 @@ jobs:
           asset_content_type: application/gzip
 ```
 
-This project took less than a day to implement, thanks to how little FastAPI and HTMX ask of you. After some minor tweaks for mobile responsiveness, my lab members started using it.
+The project took less than a day. FastAPI and HTMX needed little setup, and after a few adjustments for mobile screens, the lab started using it.
 
 [^1]: https://daisyui.com
 

@@ -9,34 +9,35 @@ tags:
   - Rust
 ---
 
-I did not pick Ktor because I liked it more than the alternatives. I picked it because the backend could live in the same module as the client, which is the whole appeal of [Kotlin Multiplatform](/blog/compose): core and domain logic shared across the server and the apps instead of reimplemented per platform.
-Then a Railway invoice for a handful of small services taught me something I should have known already: when you are billed by usage, a JVM sitting idle is a recurring cost.
+I picked Ktor because the backend could live in the same module as the client. That is the appeal of [Kotlin Multiplatform](/blog/compose): the server and apps can share application logic instead of implementing it separately for each platform.
+Then a Railway invoice for a handful of small services reminded me that an idle JVM still costs money when memory is billed by usage.
 
-## Railway meters RSS, not heap
+## Memory beyond the heap
 
-I had been thinking about memory the way you do on a machine you already own, which is to ask how much heap the app needs under load.
-For one of my services that was maybe 100MB.
-But Railway meters container RSS, and RSS for a JVM process is the heap plus everything else the runtime holds on to: metaspace for every loaded class (Ktor, Netty, kotlinx.serialization, Exposed and a JDBC driver add up quickly), the JIT code cache, roughly a megabyte of stack for each of the threads Netty starts, and off-heap buffers for socket I/O.
+I had been thinking about memory as I would on a machine I already owned: how much heap, the memory used for application objects, does the app need under load?
+For one of my services, that was maybe 100MB.
+Railway measures container RSS, the memory held in RAM by the container. For a JVM process, that includes the heap and the memory used by the runtime itself.
+Loaded classes take up metaspace, and Ktor, Netty, kotlinx.serialization, Exposed, and a JDBC driver add up quickly. There is also a cache for code compiled by the just-in-time compiler (JIT), roughly a megabyte of stack for each thread Netty starts, and buffers outside the heap for network traffic.
 
-A service doing essentially nothing sat around 300 to 400MB RSS, and the heap was the smaller part of that.
-My first instinct was to squeeze the heap:
+One service sat around 300 to 400MB RSS while doing almost nothing. The heap was the smaller part of that.
+I first tried reducing the heap:
 
 ```dockerfile
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=50 -XX:+UseSerialGC -Xss512k"
 ```
 
-That helps, and `SerialGC` in particular cuts the collector's own overhead noticeably on a single-core container, but it trims around the floor rather than removing it.
-I got to roughly 220MB and ran out of things to cut that would not mean giving up the libraries I picked Ktor for in the first place.
+That helped. `SerialGC` noticeably reduced the garbage collector's own memory use on a single-core container, but the runtime still needed a base amount of memory.
+I got to roughly 220MB. Cutting more would have meant giving up libraries I had chosen Ktor for.
 
-## The arithmetic
+## The monthly cost
 
-Railway prices memory per GB-month[^1], so an idle service is not free the way it is on a VPS you have already paid for.
-At \$10 per GB-month, a service parked at 350MB costs about \$3.50 a month while serving no traffic at all, and I had several of them plus a couple of preview environments.
-In absolute terms that is not a big bill. It was big relative to what the services actually do, which is what bothered me: most of what I was paying for was runtime rather than work.
+Railway prices memory per GB-month[^1], so an idle service adds to the bill. On a virtual private server (VPS), I would already have paid for that capacity.
+At \$10 per GB-month, a service using 350MB costs about \$3.50 a month even with no traffic. I had several, plus a couple of preview environments.
+The total was small, but it felt high for what the services did. Most of the memory I paid for was keeping the runtime alive.
 
-## Replacing them
+## Replacing two services
 
-Two of the services were small enough that a rewrite took an afternoon each. One went to Go:
+Two services were small enough to rewrite in an afternoon each. One went to Go:
 
 ```go
 func main() {
@@ -48,7 +49,7 @@ func main() {
 }
 ```
 
-The other, which mostly parses and forwards, went to Rust with `axum`:
+The other mostly parses and forwards data. I rewrote it in Rust with `axum`:
 
 ```rust
 #[tokio::main]
@@ -59,20 +60,19 @@ async fn main() {
 }
 ```
 
-Idle RSS landed around 20 to 30MB for the Go service and under 15MB for the Rust one, roughly an order of magnitude below where the tuned JVM bottomed out.
-Two side effects turned out to matter more to me than the memory itself.
-The images got much smaller: a JRE base layer plus a fat JAR was a few hundred megabytes, while a static Go binary on `scratch` or a Rust binary on `distroless` is single-digit megabytes, so deploys are far quicker.
-And with no JVM warmup, scale-to-zero became usable. The Ktor services took seconds to be useful, whereas these are ready right away.
+Idle RSS fell to around 20 to 30MB for Go and under 15MB for Rust, roughly a tenth of the tuned JVM's memory use or less.
+Two other changes ended up mattering more to me than the memory savings.
+The container images shrank from a few hundred megabytes for a Java runtime and a JAR containing all dependencies to single-digit megabytes for a static Go binary on `scratch` or a Rust binary on `distroless`. Deploys became much quicker.
+The services were also ready right away, while Ktor took seconds to warm up. That made it practical to stop them when idle and start them when a request arrived.
 
-## What I took from it
+## What I gave up
 
-The lesson is not that the JVM is bloated.
-Its memory floor is a fixed cost, and one large service on one large machine will beat both of these on throughput per dollar, with the JIT winning on long-running hot paths.
-The problem is the combination: a fixed runtime overhead is fine when you pay it once, and much less fine when you pay it every month for each of several mostly-idle containers.
+The JVM's base memory use is a fixed cost. One large service on one large machine can spread that cost over enough work to beat both of these on throughput per dollar, with the JIT speeding up frequently run code over time.
+Paying that cost separately for several mostly idle containers made less sense for my services.
 
-I should also be honest about what the trade cost, because it is more than the frameworks.
-Moving off the JVM means those two services no longer share a module with the client, so their types now exist twice: once in Kotlin for the apps and once in Go or Rust on the server. That is exactly the duplication Kotlin Multiplatform was supposed to remove, and it is a cost I keep paying every time a shape changes, not a one-time rewrite cost.
-For two stateless services that were mostly plumbing, the shared code was thin enough that I think it was still worth it.
-For anything with real domain logic it would not be, and the better fix there is to fold several Ktor services into one JVM process so the floor gets paid once. I should have looked at that first.
+Moving off the JVM also meant losing the module shared with the client. The same types now exist in Kotlin for the apps and in Go or Rust for the server, and I have to update both whenever their structure changes.
+Kotlin Multiplatform was supposed to remove exactly that duplication. The extra work continues after the rewrite.
+These two services kept no state between requests and mostly passed data around, so they shared little code with the client. I think the savings were worth it.
+For services with substantial application logic, I would keep the shared code and combine several Ktor services into one JVM process. I should have considered that first.
 
 [^1]: https://railway.com/pricing

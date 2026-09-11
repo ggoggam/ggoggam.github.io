@@ -9,16 +9,14 @@ tags:
   - Concurrency
 ---
 
-Async programming is what keeps a web application responsive under load.
-In python, it is usually done with `asyncio`, allowing developers to write concurrent, suspendable (non-blocking) code with ease.
-However, there are times where we need to cache the output of the result of async functions.
-In synchronous python, it is usually done with cache implementations such as LRU (Least Recently Used) cache in `functools` package, but it is not applicable to async functions since they return coroutine, not function outputs. Hence we need to implement a cache, preferably in the form of decorator for a concise code.
+Async code lets a web application handle other work while it waits for a task to finish. In Python, `asyncio` lets functions pause and resume this way.
+Sometimes we need to cache an async function's result so later calls can reuse it.
+The LRU (least recently used) cache in `functools` works for regular functions, but async functions return a coroutine, or work to be awaited, before they produce a result. We need a cache that waits for that result before storing it. A decorator lets us add this behavior without changing each function.
 
-## Defining LRU cache
+## Keeping recently used results
 
-In order to do this, we shall first define a key that will be used to identify arguments to a function.
-Note that it should be **hashable** so that it can be stored as a key in a dictionary (hash map).
-We will focus on implementing LRU cache, which is basic yet one of most commonly used caching algorithm, notably in memory paging.
+First, we need a key that identifies the arguments passed to a function. The key must be hashable so we can use it in a dictionary.
+An LRU cache removes the least recently used result when it runs out of space. This is a common approach, also used in memory paging.
 
 ```python showLineNumbers
 class HashableKey:
@@ -42,7 +40,7 @@ class HashableKey:
         return hash(_hash(self.args) + _hash(self.kwargs))
 ```
 
-Then we can implement LRU cache.
+The cache keeps recently read entries at the end of an ordered dictionary:
 
 ```python
 class LeastRecentlyUsedCache(OrderedDict):
@@ -63,9 +61,9 @@ class LeastRecentlyUsedCache(OrderedDict):
             del self[oldest]
 ```
 
-## Defining TTL cache
+## Expiring old results
 
-To define a time-to-live (TTL) cache, one can extend LRU to check for expiration of the cached results.
+A time-to-live (TTL) cache gives each result an expiration time. We can extend the LRU cache to check that time before reusing a result.
 
 ```python
 class TimeToLiveCache(LeastRecentlyUsedCache):
@@ -94,9 +92,9 @@ class TimeToLiveCache(LeastRecentlyUsedCache):
         super().__setitem__(key, (value, ttl))
 ```
 
-## Defining a wrapper
+## Wrapping an async function
 
-For a wrapper (decorator), we can define the following wrapper class using the aforementioned key and cache implementations.
+This decorator uses the key and cache classes above. It checks the cache first, then waits for the function's result if needed.
 
 ```python
 class async_lru_cache:
@@ -113,8 +111,8 @@ class async_lru_cache:
         return wrapper
 ```
 
-The wrapper for TTL can be written in a similar way; just replace `self.lru` with an instance of TTL cache defined above.
-Now, we can use this with an asynchronous function.
+For a TTL version, replace `self.lru` with an instance of the TTL cache above.
+Apply the decorator to an async function like this:
 
 ```python
 class UserService:
