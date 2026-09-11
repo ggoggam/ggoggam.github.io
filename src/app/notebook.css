@@ -266,6 +266,99 @@
   line-height: 1.4;
 }
 
+/* Skiper95-inspired reading ruler, kept in the outer gutter above the blur. */
+.reading-progress {
+  --reading-progress: 0%;
+  position: fixed;
+  z-index: 20;
+  top: 50%;
+  right: max(28px, env(safe-area-inset-right));
+  width: 16px;
+  height: min(240px, 36svh);
+  transform: translateY(-50%);
+  pointer-events: none;
+  user-select: none;
+  visibility: hidden;
+}
+.reading-progress[data-ready="true"] {
+  visibility: visible;
+}
+.reading-progress-track,
+.reading-progress-fill {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(to bottom, var(--rule-strong) 0 1px, transparent 1px 8px);
+}
+.reading-progress-fill {
+  background: repeating-linear-gradient(to bottom, var(--ink) 0 1px, transparent 1px 8px);
+  clip-path: inset(0 0 calc(100% - var(--reading-progress)) 0);
+  transition: clip-path 120ms ease-out;
+}
+.reading-progress-marker {
+  position: absolute;
+  top: var(--reading-progress);
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateY(-50%);
+  transition: top 120ms ease-out;
+}
+.reading-progress-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  max-inline-size: min(240px, var(--reading-title-width, 200px));
+  white-space: nowrap;
+  pointer-events: auto;
+  padding-block: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.reading-progress-title {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.reading-progress-separator,
+.reading-progress-number {
+  flex-shrink: 0;
+}
+.reading-progress-number {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.reading-progress-line {
+  flex-shrink: 0;
+  width: 20px;
+  height: 1px;
+  background: var(--ink);
+}
+
+/* Keep the whole indicator inside the existing phone/tablet gutter. */
+@media (max-width: 960px) {
+  .reading-progress {
+    right: max(7px, env(safe-area-inset-right));
+    width: 10px;
+    height: min(160px, 30svh);
+  }
+  .reading-progress-marker {
+    right: -1px;
+  }
+  .reading-progress-label {
+    max-inline-size: min(240px, 40svh);
+    padding: 5px 2px;
+    writing-mode: vertical-rl;
+    font-size: 10px;
+  }
+  .reading-progress-line {
+    display: none;
+  }
+}
+
 .footer-inner {
   display: flex;
   align-items: center;

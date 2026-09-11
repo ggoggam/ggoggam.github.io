@@ -4,6 +4,7 @@ import type { MDXComponents } from "mdx/types";
 import { useRef } from "react";
 import { mdxComponents } from "@/components/mdx-component";
 import ReferencePeek from "@/components/post/reference-peek";
+import ReadingProgress from "@/components/post/reading-progress";
 import { useThemePref } from "@/lib/theme";
 import { ArrowIcon } from "@/components/site/arrow-icon";
 
@@ -30,9 +31,11 @@ export default function PostArticle({
   // The peek reads the footnote list out of this subtree and measures the
   // column against it, so it needs the article box, not the prose box.
   const articleRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   return (
     <article ref={articleRef} className="reading-article">
+      <ReadingProgress key={`${type}/${slug}`} contentRef={contentRef} title={title} />
       <Link to={`/${type}`} className="article-back">
         <span>
           <ArrowIcon />
@@ -69,7 +72,7 @@ export default function PostArticle({
         )}
       </header>
 
-      <div className="prose">
+      <div ref={contentRef} className="prose">
         <Component components={mdxComponents} />
       </div>
 
