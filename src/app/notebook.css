@@ -349,10 +349,7 @@
     right: -1px;
   }
   .reading-progress-label {
-    max-inline-size: min(240px, 40svh);
-    padding: 5px 2px;
-    writing-mode: vertical-rl;
-    font-size: 10px;
+    display: none;
   }
   .reading-progress-line {
     display: none;
