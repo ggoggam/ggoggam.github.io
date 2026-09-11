@@ -10,21 +10,20 @@ tags:
 
 import { GershgorinCanvas } from "@/components/gershgorin-canvas";
 
-Gershgorin Circle Theorem is a pretty neat theorem in linear algebra that provides a simple yet powerful way to bound the eigenvalues of a square matrix.
-I was first introduced to this during college, and it has been one of my favorite theorems since then.
-Today I was reminded of this theorem.
+The Gershgorin circle theorem tells us where a square matrix's eigenvalues can lie without having to calculate them.
+I first learned it in college, and it has been one of my favorite theorems since. Something reminded me of it today.
 
 ### Theorem
 
-Define Gershgorin circle in a complex plane to be a closed disk centered at $a_{ii}$ with radius $R_i = \sum_{j \neq i} | a_{ij} |$, where $a_{ij}$ are the elements of a complex square matrix $A$.
-Then every eigenvalue of a square complex matrix $A$ lies within the union (or equivalently at least one) of the Gershgorin circles.
+For each row of a complex square matrix $A$, draw a closed disk in the complex plane centered at $a_{ii}$ with radius $R_i = \sum_{j \neq i} | a_{ij} |$, where $a_{ij}$ are the matrix entries. The radius is the sum of the absolute values of the other entries in that row.
+Every eigenvalue of $A$ lies in at least one of these Gershgorin circles.
 
 ### Proof
 
-Let $\lambda$ be an eigenvalue of $A$ and $\mathbf{x}$ be the corresponding eigenvector.
-Find $i$ such that $i = \arg \max_{k} | x_k |$.
-Then we have $\sum_{j \neq i} a_{ij} x_j = (\lambda - a_{ii}) x_i$ from the definition of eigenvalue.
-We can apply triangle inequality and let $| x_j | / |x_i| \leq 1$ to get
+Let $\lambda$ be an eigenvalue of $A$ and $\mathbf{x}$ its corresponding eigenvector.
+Choose the largest entry of the eigenvector in absolute value: $i = \arg \max_{k} | x_k |$.
+The definition of an eigenvalue gives $\sum_{j \neq i} a_{ij} x_j = (\lambda - a_{ii}) x_i$.
+Apply the triangle inequality and use $| x_j | / |x_i| \leq 1$:
 
 $$
 |\lambda - a_{ii}| = \left| \sum_{j \neq i} \frac{a_{ij} x_j}{x_i} \right| \leq \sum_{j \neq i} \left| a_{ij} \right| \frac{\left| x_j \right|}{\left| x_i \right|} \leq \sum_{j \neq i} \left| a_{ij} \right|.
@@ -32,9 +31,7 @@ $$
 
 ### Visualization
 
-You may input array of array of numbers.
-Since computing eigenvalues for different values are not trivial, I will not be showing the eigen values here.
-
-However, this is where the power of the theorem lies; you do not have to compute the actual eigen value to know its approximate location in the complex plane!
+Enter a matrix as an array of arrays of numbers.
+The visualization shows the circles, but does not calculate the eigenvalues themselves, which takes more work. You can still see the regions where the eigenvalues must lie.
 
 <GershgorinCanvas />

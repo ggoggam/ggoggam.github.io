@@ -8,13 +8,11 @@ tags:
   - SQL
 ---
 
-Cursor-based pagination can have benefits over offset-based pagination especially when the number of records is huge.
-If the database has a lot of records, the database will have to skip the offset number of records before returning the result.
-On the otherhand, if the database is properly indexed, cursor-based pagination can be faster as it can directly jump to the record based on the cursor.
+When a table has many records, fetching later pages with an offset can be slow: the database has to skip all the records before that offset.
+Cursor-based pagination uses a record as the starting point for the next page. With a suitable index, the database can jump to that point directly.
 
-As in any pagination methods, you need to return the next cursor to fetch the next page of records.
-A neat trick here is to fetch one (or more) records more than the page size to check if there is a next page.
-Here is a simple trick to handle cursor-based pagination in `querydsl` syntax:
+To tell the caller whether another page exists, fetch one more record than the page size. If that extra record is present, return a cursor for the next page along with the current page's records.
+This example uses `querydsl`:
 
 ```kotlin
 import com.querydsl.jpa.impl.JPAQueryFactory

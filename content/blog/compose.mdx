@@ -10,13 +10,13 @@ tags:
   - Cross-platform
 ---
 
-## (Jetpack) Compose
+## Jetpack Compose
 
-I began Android development rather recently, so I was fortunate enough to learn Jetpack Compose as the main interface framework.
-Most of the Android developers who came from the old-school XML development unanimously praised Jetpack Compose for the simplicity it brings to the app development.
+I started Android development recently enough to learn Jetpack Compose as my main UI framework.
+The Android developers I heard from who had used XML praised how much simpler Compose made their work.
 
-To see this, let us consider an example where we have to create a screen, where there are multiple screen states, namely success, error, and loading. In the XML-based Android development, you usually had to create separate XML files for each of the state.
-On the other hand, the Compose framework greatly simplifies the development process, especially when coupled with the power of Kotlin. Let us define the model and screen state as the following:
+Consider a screen with loading, success, and error states. In XML-based development, I would usually create separate XML files for those states.
+With Compose and Kotlin, I can describe them together. First, define the model and screen state:
 
 ```kotlin
 // data model
@@ -47,7 +47,7 @@ sealed class ScreenState(
 }
 ```
 
-The Compose code looks like the following:
+Then define the screen:
 
 ```kotlin
 @Composable
@@ -90,30 +90,26 @@ fun MainScreen(state: ScreenState) {
 }
 ```
 
-With a single code file, Compose can declaratively define business logics and tie them to the user interface seemlessly.
-This streamlines the development with easily readable code with a minimal overhead.
+The screen's logic and UI live in one file. I can describe what each state should look like, and the code is easy to follow without much setup.
 
-## Cross-platform Development
+## Sharing code across platforms
 
-While it is usually great to develop natively for performance, cross-platform frameworks can make development cycle more efficient by sharing the code base for different platforms such as iOS, Android, and Desktop. The most notable and stable among them so far have been React Native (RN)[^1] and Flutter[^2].
+Native development is usually a good choice for performance. Frameworks that share code across iOS, Android, and desktop can save development time. React Native (RN)[^1] and Flutter[^2] have been the most established options.
 
-RN is by far the most popular cross-platform framework due to its massive ecosystem and the low learning curve for developers with familiarity to React and Javascript.
-Moreover, RN supports code push functionality, which does not require app store review upon release.
-This makes it suitable for early stage products without complicated native functionalities.
-With the recent integration of Expo[^3], RN has firmly grounded itself as the most popular cross-platform framework.
+React Native is the most popular of these frameworks, helped by its large collection of libraries and the familiar starting point for React and JavaScript developers.
+It also supports sending code updates without an app store review for each release. That makes it useful for early products with few complicated native features.
+Expo[^3] has helped it become more widely used.
 
-More recently, JetBrains has released a series of modules amounting to the Kotlin Multiplatform (KMM) [^4] framework.
-This allows developers to simplify the development of the entire application, including even the backend (with Ktor).
-Hence, KMM allows for sharing of core, domain, and presentation logic all in the same code base in accordance with monorepo strategy for more efficient development cycle.
+JetBrains' Kotlin Multiplatform (KMM)[^4] lets developers share code across more of an application, including a backend built with Ktor.
+The server and apps can keep shared application rules and screen logic in one repository, reducing the work of implementing the same behavior for each platform.
 
-Moreover, the Compose Multiplatform (based on Jetpack Compose for Android) allows the sharing of UI code, making it a viable alternative for React Native.
-However, iOS Compose just entered the beta and is not entirely stable.
-Given the potential of KMM framework, the current issues with KMM will soon be addressed.
+Compose Multiplatform builds on Jetpack Compose and lets those apps share UI code too. That makes it an alternative to React Native.
+At the time of this experiment, Compose for iOS had just entered beta and was not fully stable. I expected those issues to improve as KMM developed.
 
-## Trying out KMM
+## Trying KMM
 
-With the recent update, KMM projects can be easily created via Kotlin Multiplatform Wizard[^5], which provides example templates and an option for iOS to use a shared Compose UI (otherwise defaults to SwiftUI).
-Upon creating the project we can inspect the project structure:
+Kotlin Multiplatform Wizard[^5] provides project templates and lets you choose a shared Compose UI for iOS; otherwise, it defaults to SwiftUI.
+A generated project has this structure:
 
 ```bash
 .
@@ -142,8 +138,8 @@ Upon creating the project we can inspect the project structure:
 └── settings.gradle.kts
 ```
 
-At the root, we have `composeApp` and `iosApp`. The `iosApp` directory holds an XCode resources necessary for compiling the code to an iOS app.
-The main interests lie in `composeApp/commonMain` directory.
+At the root are `composeApp` and `iosApp`. The `iosApp` directory holds the Xcode resources needed to build the iOS app.
+The shared code is in `composeApp/commonMain`.
 
 [^1]: https://reactnative.dev
 

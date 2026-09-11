@@ -8,7 +8,7 @@ tags:
   - Development
 ---
 
-Whenever we run a command in a shell, it's tied to the shell. If we exit the shell, then the command will exit as well.
+A command started in a shell is tied to that shell. Closing the shell can stop the command, even if it is running in the background.
 
 ```shell
 # will exit when the shell is closed
@@ -16,14 +16,14 @@ $ sleep 100 &
 [1] 12345
 ```
 
-To run a command in the background and keep it running even after the shell is closed, we can use the `nohup` command.
+Use `nohup` to keep a background command running after you close the shell.
 
 ```shell
 $ nohup sleep 100 &
 [1] 12345
 ```
 
-This is commonly used when running a long-running process such as training. But what if we forgot to run the command in the background? We can suspend the command, run it in the background, and then disown it.
+This is useful for jobs that take a while, such as model training. If you already started the command without it, suspend the command, resume it in the background, and remove it from the shell's job list:
 
 ```shell
 $ sleep 100

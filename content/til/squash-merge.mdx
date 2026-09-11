@@ -8,9 +8,8 @@ tags:
   - Development
 ---
 
-We can 'squash' multiple commits in Git into a single commit to make things cleaner. It is easy to do when you are only rebasing the commits in a single branch without merge commits. However, things can get a bit tricky when you have merge commits in the history.
-
-You can do this easily by the following steps:
+Squashing combines several Git commits into one. Rebasing a branch without merge commits is straightforward, but merge commits make it trickier.
+Use a temporary branch to create the combined commit, then move the feature branch to it:
 
 ```bash
 git checkout -b temp {main-branch}
@@ -22,4 +21,4 @@ git branch -D temp
 git push -u origin {feature-branch} --force
 ```
 
-This will squash all the commits in the `feature-branch` into a single commit and push it to the remote repository.
+This combines the commits in `feature-branch` into one and force-pushes the rewritten branch to the remote repository.

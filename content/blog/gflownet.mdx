@@ -10,22 +10,19 @@ tags:
   - GFlowNet
 ---
 
-A co-worker of mine in the lab recently introduced me to a framework[^1], and I am truly excited about what it brings to the research scene in artificial intelligence.
-The novel framework is called GFlowNets (short for **G**enerative **Flow** **Net**works), which can be thought of as an extension of reinforcement learning (RL).
-The main objective of interest is to sample a compositional object, i.e. objects that can be built by taking a series of sequential steps, from a multi-modal distribution in such a way that the samples are rewarding.
+A colleague in the lab recently introduced me to GFlowNets[^1], short for Generative Flow Networks. I was excited by the idea: extend reinforcement learning (RL) to produce a variety of useful results.
+A GFlowNet builds an object through a series of steps and samples from a distribution with several peaks, aiming to produce objects with high rewards.
 
-As opposed to conventional RL methods, GFlowNets hold several advantages. The most notable among them is the diversity of high-reward samples.
-In conventional RL, the reward-maximizing (or mode-seeking) behavior of policies often result in mode-collapse, resulting in high reward samples from only few modes in the sample distribution.
-With this in mind, GFlowNets can be applied to tasks that require creativity, where novel yet rewarding samples are desirable. One such application is molecule generation (possible for drug discovery), which is explored in the seminal paper[^2].
+Conventional RL usually tries to maximize reward. That can lead it to keep producing results from only a few peaks in the distribution, a problem called mode collapse.
+GFlowNets aim for a wider variety of high-reward results. This makes them useful when we want several new candidates, such as molecules for possible drug discovery, an application explored in the original paper[^2].
 
-## Main Idea
+## Building an object step by step
 
-The main idea behind GFlowNets is to learn a policy that can create an object
+A GFlowNet learns a policy, a rule for choosing the next step, that creates an object.
 
-## Preliminaries
+## Definitions
 
-We define a Markov Decision Process (MDP) as a tuple $\langle S, A, f, r, \rho_0 \rangle$, where $S$ is the state space, $A$ the action space, $f: S \to S$ transition, $r$ reward, and $\rho_0$ the initial distribution of states.
-The
+We define a Markov Decision Process (MDP) as a tuple $\langle S, A, f, r, \rho_0 \rangle$. Here, $S$ is the set of states, $A$ is the set of actions, $f: S \to S$ describes transitions between states, $r$ gives the reward, and $\rho_0$ is the initial distribution of states.
 
 ```math
 L(s) = \sum_{i=0}^n a_i \prod_{j \geq 0} t_j

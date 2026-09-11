@@ -8,14 +8,15 @@ tags:
   - SQL
 ---
 
-I personally like type-safe queries other than ORMs, and `querydsl` is a perfect middle ground between raw SQL queries and ORM. Spring Data JPA already provides `QueryDslPredicateExecutor` to execute queries based on `Predicate` instances from `querydsl`, but it lacks core functionalities such as joins, ordering, and limits.
+I like queries that the compiler can check. `querydsl` gives me a middle ground between raw SQL and an object-relational mapper (ORM), which maps database records to application objects.
+Spring Data JPA provides `QueryDslPredicateExecutor` for queries built from `Predicate` instances in `querydsl`, but it limits the control I want over joins, ordering, and result limits.
 
 ```kotlin
 @Repository
 interface UserRepository : JpaRepository<User, Long>, QueryDslPredicateExecutor<User>
 ```
 
-Let's say we want to find a page of users ordered by name in descending order. The `findAll` method only take predicate and a `Pageable` instance, which is not enough to create a query with ordering:
+Suppose we want a page of users sorted by name in descending order. This `findAll` call takes a predicate, or query condition, and a `Pageable` instance. The example does not specify the ordering:
 
 ```kotlin
 import org.springframework.data.querydsl.QuerydslPredicateExecutor
@@ -32,7 +33,7 @@ class UserService(
 }
 ```
 
-Instead of using `QueryDslPredicateExecutor`, you can use `Querydsl` directly to create type-safe queries.
+Using `Querydsl` directly gives us control over the query while keeping the compiler's checks:
 
 ```kotlin
 import com.querydsl.jpa.impl.JPAQueryFactory

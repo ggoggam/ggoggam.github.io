@@ -11,29 +11,22 @@ tags:
   - Concurrency
 ---
 
-[Part one](/blog/vitre-i) described Vitre as a step vocabulary for driving a WebView.
-The steps are the part people see.
-This post is about the part I spent most of the time on and none of the marketing on: the thread the WebView owns, who is allowed to touch it, and in what order.
+[Part one](/blog/vitre-i) described the steps Vitre uses to control a WebView.
+Most of my time went into deciding which caller could use the WebView, on which thread, and in what order.
 
-I want to be blunt about why this matters, because it is easy to skim.
-A workflow is one caller running a script it wrote in advance.
-Add an agent and you have a *second* caller, arriving at times nobody planned, interleaved with the first.
-Add the UI and you have a third — the reload button is a caller too.
-Every hard bug in this library lives in the space between those callers, and the entire design is one object whose job is to make that space empty.
+A workflow follows a planned sequence. An agent adds calls at times the workflow cannot predict, and the UI can trigger actions such as reloads too.
+The hardest bugs came from those callers interfering with one another. I put the rules for coordinating them in one object.
 
-## There is nothing to negotiate
+## WebViews must run on their own thread
 
-Both platforms have already decided the question for you.
+`WKWebView` is part of UIKit, and every member must be called on the main thread. Calling it from another thread causes undefined behavior, often a hang or an incorrect result instead of an exception.
+An Android `WebView` must be used on the thread that created it, usually the UI thread.
 
-`WKWebView` is UIKit. Every member is main-thread-only, and calling one from another thread is not an exception, it is undefined behaviour. It usually presents as a hang or a wrong answer, which is exactly why it survives testing.
-An Android `WebView` must be used on the thread that constructed it, which for a hosted view is the UI thread.
+For a hosted WebView, both platforms therefore require calls on the main thread. Vitre has to move calls onto that thread and order them there.
 
-So the WebView thread *is* the platform main thread, and no amount of clever design changes that.
-You do not get to synchronise threads. You get to decide who may visit the one thread that exists, and in what order they queue.
+## One place for WebView calls
 
-## The model: one crossing point
-
-Three roles, three places, and exactly one point where anyone touches the WebView.
+The engine prepares the work, the serializer coordinates access, and the UI observes the results:
 
 ```
    UI (Compose, main thread)          Agent / MCP / host code (any dispatcher)
@@ -56,60 +49,51 @@ Three roles, three places, and exactly one point where anyone touches the WebVie
                         WKWebView / android.webkit.WebView
 ```
 
-`WebViewSerializer` is the whole concurrency model, and it enforces two rules.
+`WebViewSerializer` enforces two rules.
 
-**Confinement.** Every platform call goes through `withContext(WebViewDispatcher)`.
-Callers run wherever they like and cross over for the duration of one operation.
-`WebViewDispatcher` is `Dispatchers.Main.immediate` on mobile and `Dispatchers.Swing.immediate` on the desktop, so a caller already on the UI thread — the Compose host, most of the time — pays nothing to cross.
+Every platform call runs through `withContext(WebViewDispatcher)`. A caller can start on any thread and switch for one operation.
+`WebViewDispatcher` is `Dispatchers.Main.immediate` on mobile and `Dispatchers.Swing.immediate` on desktop. If the caller is already on the UI thread, as the Compose host usually is, it does not need to switch.
 
-**Total ordering.** `navigate` and `evaluate` share one lock.
-Operations against a WebView are serialised because interleaving them is not merely racy, it is *meaningless*: a script evaluated halfway through someone else's navigation runs against whichever document happened to be committed, which is not a result any caller asked for.
+Calls to `navigate` and `evaluate` share a lock, so one operation finishes before another begins.
+Otherwise, a script running during someone else's navigation could act on whichever document happens to be loaded at that moment.
 
-The one exception is waiting for an inbound message, which deliberately does *not* take the lock.
-A wait is not an operation, and holding the WebView while waiting for the page to speak is a deadlock, because the page usually needs a script to run before it can say anything.
+Waiting for an incoming message does not take this lock. The page may need another script to run before it can reply. Holding the lock while waiting would prevent that script from running and leave both sides stuck.
 
-Everything else falls out of those two rules.
-The engine runs on `Dispatchers.Default` because parsing selectors and decoding JSON is business logic with no business on the UI thread.
-The UI observes events and never holds a controller it drives directly.
+The engine parses selectors and decodes JSON on `Dispatchers.Default`, keeping that work off the UI thread.
+The UI observes events and does not drive a controller directly.
 
-## The bugs this actually fixed
+## Bugs this fixed
 
-This is not architecture for its own sake. Every row below was a live bug, and most of them presented as something other than a threading problem — which is the whole reason a single serialisation point is worth having, because otherwise each one is its own investigation.
+Each row below came from a bug I encountered. Most did not initially look like threading problems.
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| A script whose page navigated away hung the workflow forever | Both platforms drop a pending script callback when the document goes, without invoking it | `evaluate` is bounded and raises `ScriptTimeoutException` |
-| A step after a click that navigated failed a workflow that was fine | Same cause, but the page started the navigation, so waiting out the timeout reported a healthy page as slow | `evaluate` watches for the document being replaced and resubmits **once**, against the page that settles in its place |
-| `AwaitMessage` hung forever when it lost a race | The page posted before the step subscribed; a no-replay `SharedFlow` drops that silently | `WebViewInbox` buffers unread messages and consumes each exactly once |
-| Cancelling a run reported it as a failure | The engine caught `Throwable`, including `CancellationException` | Every self-imposed timeout becomes a domain exception where it expires, so a cancellation at the top can only be the collector's |
-| `WaitFor(timeoutMs = 10_000)` could run for a minute | Elapsed time counted poll intervals, not the round trips between them | Bounded on wall clock |
-| iOS could never satisfy a `WaitFor` | WebKit's `description` prints JS `true` as `"1"`; Android returns `"true"` | Every platform now wraps scripts in `JSON.stringify` |
+| Symptom                                                       | Cause                                                                                  | Fix                                                                                                                                 |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| A workflow hung after navigation interrupted a script         | Both platforms discard the pending script callback when the document is replaced       | `evaluate` has a timeout and raises `ScriptTimeoutException`                                                                        |
+| A step failed after a click triggered a successful navigation | The page discarded the callback, so waiting for it made a healthy page look slow       | `evaluate` detects a replacement document and resubmits once against the new page                                                   |
+| `AwaitMessage` waited forever                                 | The page replied before the step subscribed, and `SharedFlow` had no replay buffer     | `WebViewInbox` stores unread messages and consumes each once                                                                        |
+| Cancelling a run reported a failure                           | The engine caught `Throwable`, including `CancellationException`                       | Each internal timeout becomes a specific exception where it occurs, leaving cancellation at the top to mean the collector cancelled |
+| `WaitFor(timeoutMs = 10_000)` could run for a minute          | The timer counted polling intervals but excluded time spent making calls between polls | Measure actual elapsed time                                                                                                         |
+| iOS never satisfied a `WaitFor`                               | WebKit's `description` prints JavaScript `true` as `"1"`; Android returns `"true"`     | Every platform wraps scripts in `JSON.stringify`                                                                                    |
 
-The one I want to single out is the resubmit-once rule, because the reasoning behind "once" is the reasoning behind the whole library.
-When you click a submit button, the page navigates, and every platform silently drops the script callback that was in flight against the old document.
-The reply is not late — it is never coming.
-So the serializer resubmits the operation, but exactly once, and only when it sees a new document commit rather than a result arrive.
-Once, because a *second* loss is a genuine fault and should look like one.
-Retrying forever would turn a real failure into a hang, which is trading a visible bug for an invisible one.
+Resubmitting after navigation needed a limit.
+Clicking a submit button can navigate away and discard the callback for the script running in the old document. Waiting longer will not bring that reply back.
+When the serializer sees a new document load instead of a result, it resubmits the operation once against that document.
+A second lost callback is treated as a failure. Retrying indefinitely would leave a broken operation hanging without reporting why.
 
-![A nine-step workflow driving a live Amazon results page — Navigate, WaitFor, Input "mechanical keyboard", Click — with the step trace running underneath while the real page renders above it.](/asset/vitre-amazon.png)
+![A live Amazon results page with a nine-step workflow beneath it, including navigation, waiting, typing "mechanical keyboard", and clicking.](/asset/vitre-amazon.png)
 
-The screenshot above is the reason the ordering lock is not academic.
-That is a real third-party site, typed into and clicked through, with the step trace running at step nine of nine while the page renders live.
-A user could tap reload at any point in that sequence, and the reload is just another caller that queues behind the operation in flight.
+The screenshot shows the workflow at step nine of nine while the page renders.
+The user can tap reload at any point. That reload queues behind the current operation through the same lock.
 
-## The async bridge had a hole in it
+## A forged script result
 
-Here is a failure I am less proud of, and it is worth telling because the fix is more interesting than the original design.
+The first async bridge had a security defect I am less proud of.
+`evaluateJs` needs to wait for JavaScript promises: `fetch` is asynchronous, and a shop's own JSON API is often easier to read than its page elements, or DOM.
+Initially, iOS used `callAsyncJavaScript` while Android used a wrapper around the message bridge. A constructor flag enabled this behavior and defaulted to `false`, so promises could still be silently serialized as `{}`.
 
-`evaluateJs` needs to await promises — anything built on `fetch` is asynchronous, and a shop's own JSON API is frequently the better extraction path than its DOM.
-The first version did this three different ways: `callAsyncJavaScript` on iOS, a wrapper over the bridge on Android, and a constructor flag deciding whether either happened at all, defaulting to `false`.
-Two implementations of one contract, plus a default that preserved the old broken behaviour where a promise silently serialised as `{}`.
-
-Worse, there was a forgery hole.
-The Android message listener registered with `setOf("*")` and discarded the source origin; iOS installed the bridge script `forMainFrameOnly = false` and ignored the frame info.
-Script results were correlated by a counter starting at zero — trivially guessable.
-So a third-party iframe on a page a lane was driving could run:
+The Android listener registered with `setOf("*")` and discarded the message's source origin. iOS installed its script with `forMainFrameOnly = false` and ignored frame information.
+Results were matched to requests with a counter starting at zero.
+A third-party iframe embedded in the page could guess that counter and send this:
 
 ```js
 window.vitre.postMessage(JSON.stringify({
@@ -118,46 +102,45 @@ window.vitre.postMessage(JSON.stringify({
 }))
 ```
 
-and resolve someone's `Extract` with data of its choosing.
-For a library whose stated job is driving third-party shops, that is the defect that mattered most.
+The forged message could complete an `Extract` with an answer chosen by the iframe. That was a serious problem for a library intended to control third-party sites.
 
-## The redesign
+## Separating results and checking senders
 
-Three changes closed it, and they are each small.
+I changed how the bridge handles script results, message sources, and request identifiers.
 
-**A dedicated settle plane.** Script results used to travel through the same inbox that holds page traffic for `AwaitMessage` and feeds the observer firehose.
-That meant every settle did an O(n) predicate scan over unrelated traffic, and internal plumbing leaked into the observer stream.
-A new `ScriptResults` object owned by each controller takes every inbound message *first* and claims the ones that are script results; only what it does not claim goes on to the inbox.
-Correlation becomes a map lookup, the firehose never sees internal traffic, and a stale result is dropped instead of rotting in the buffer until the next navigation.
+### Send script results to their own handler
 
-**Frame- and origin-gating.** The platform callbacks stop discarding what they are handed.
-Each inbound message now carries whether it came from the main frame and what origin posted it.
-Awaits are main-frame-gated: an embedded ad on a third-party site cannot post `{"type":"ready"}` and satisfy the `AwaitMessage` armed for the main document.
-Subframe traffic still reaches the observer firehose — a subframe *error* is information — but it cannot *answer* a wait.
+Script results used to enter the same inbox as page messages for `AwaitMessage` and the stream of messages exposed to observers.
+Matching a result required an O(n) scan, checking unrelated messages one by one. Observers also received internal messages they did not need.
 
-**An unguessable nonce.** Each controller generates a random nonce once, at construction.
-The pending sentinel becomes `__wv_pending:<nonce>:<cid>` instead of a guessable string, and the result envelope carries the nonce, so a guessed counter is no longer enough.
+Each controller now has a `ScriptResults` object that sees incoming messages first. It takes script results and passes the rest to the inbox.
+It matches results through a map lookup, keeps internal traffic out of the observer stream, and discards stale results immediately.
 
-There is an honest limit here, and I put it in the docs rather than pretending it away.
-A script running *in the main frame* shares the JS context with the wrapper and can shadow `window.vitre.postMessage` before it is called.
-Nothing short of an isolated content world makes main-frame results tamper-proof — but a hostile main document can already lie in its own DOM, which is where the data comes from anyway.
-The boundary you can enforce is the frame boundary: only the document you are driving may answer, and its subframes may not.
+### Check the frame and origin
 
-With the hole closed, the flag went too.
-`evaluateJs` now always awaits, on every platform, and `await` on a plain value is a no-op, so the synchronous case is unchanged in meaning.
-A promise stops being a special case the caller had to opt into and then, inevitably, forget to.
+Platform callbacks now retain the sender's origin and whether the message came from the main frame, the page's top-level document.
+Only main-frame messages can satisfy a wait. An embedded ad cannot send `{"type":"ready"}` to complete an `AwaitMessage` intended for the page.
+Messages from embedded frames still reach observers, because an error there can be useful information.
 
-## Post-then-await is not a race
+### Add a random identifier
 
-One more piece, because it is the kind of thing that works in the demo and fails in production.
-A native caller sends a request to the page and waits for a reply.
-The reply can arrive *before* the wait begins — a page handler that replies synchronously on click is the common case, not the unlucky one.
+Each controller generates a random nonce, an identifier that cannot be predicted, when it is created.
+The pending marker is `__wv_pending:<nonce>:<cid>`, and the result message must carry the nonce too. Guessing the counter is no longer enough.
 
-A plain `SharedFlow` drops that reply on the floor and the caller waits out its whole timeout.
-`WebViewInbox` buffers unread messages and the await scans the buffer before it sleeps, so a reply already sitting there is matched immediately.
-The `replyTo` field on the envelope is what stops the *wrong* buffered reply from being taken — it names the request being answered, kept separate from the message's own `id` so a reply is distinguishable from its request on the firehose.
+There is still a limit. A script in the main frame shares the wrapper's JavaScript environment and can replace `window.vitre.postMessage` before it runs.
+Protecting against that would require an isolated script environment. The main document can already lie through its own DOM, so the enforced boundary is that only the document being controlled may answer; embedded frames may not.
 
-None of this is visible in the API. `bridge.request<Ack, Token>("issue-token", Ack(seen = true))` is one line.
-That is the point of putting the whole policy in one place: the hard part is real, and it happens once, where nobody using the library has to think about it.
+I also removed the opt-in flag. `evaluateJs` now waits for promises on every platform.
+Using `await` on a plain value leaves its meaning unchanged, so callers no longer need to choose between synchronous and asynchronous evaluation.
 
-The [last post](/blog/vitre-iii) is about the caller this concurrency model was quietly built for the whole time — an agent, which is nothing but a sequence of these operations arriving at unplanned times, and which needs one more thing that ordering alone cannot give it.
+## Replies that arrive before the wait
+
+A page can reply immediately when native code sends a request or clicks a button, before the caller starts waiting.
+A plain `SharedFlow` drops that reply, leaving the caller to time out.
+
+`WebViewInbox` stores unread messages. A wait checks that buffer first and takes a matching reply immediately if one is already there.
+The `replyTo` field identifies the request being answered. It is separate from the message's own `id`, so replies can be matched correctly and distinguished from requests in the observer stream.
+
+Callers use `bridge.request<Ack, Token>("issue-token", Ack(seen = true))`; the shared implementation handles the buffering and matching.
+
+The [last post](/blog/vitre-iii) covers agents, whose calls arrive at unpredictable times and sometimes need to hold a WebView for several operations together.
