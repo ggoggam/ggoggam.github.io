@@ -1,6 +1,7 @@
 import { createRootRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import SiteHeader from "@/components/site/site-header";
 import SiteFooter from "@/components/site/site-footer";
+import ProgressiveBlur from "@/components/site/progressive-blur";
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -8,6 +9,7 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const blogPost = /^\/blog\/[^/]+\/?$/.test(pathname);
   const reading = /^\/(blog|til)\/[^/]+/.test(pathname) || pathname === "/about";
 
   return (
@@ -19,19 +21,20 @@ function RootLayout() {
         skip to content
       </a>
       <div className="flex min-h-screen flex-col">
-        <header className="site-header">
+        <header className={`site-header${blogPost ? " relative z-20" : ""}`}>
           <SiteHeader />
         </header>
         <main id="content" className={`site-main${reading ? " site-main-reading" : ""}`}>
           <Outlet />
         </main>
-        <footer className="site-footer">
+        <footer className={`site-footer${blogPost ? " relative z-20" : ""}`}>
           <SiteFooter
             github="https://github.com/ggoggam"
             source="https://github.com/ggoggam/ggoggam.github.io"
           />
         </footer>
       </div>
+      {blogPost && <ProgressiveBlur />}
     </>
   );
 }
