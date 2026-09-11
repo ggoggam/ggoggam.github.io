@@ -63,6 +63,9 @@ export default defineConfig({
           [
             rehypePrettyCode,
             {
+              // Unlabelled fences need the same line markup for numbers and
+              // padding as language-labelled code blocks.
+              defaultLang: { block: "plaintext" },
               // Dual theme: Shiki emits --shiki-light/--shiki-dark on every
               // token and globals.css picks one, so code follows the theme
               // without shipping two stylesheets.
