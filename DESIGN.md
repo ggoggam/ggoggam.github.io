@@ -66,9 +66,15 @@ preserve each piece's current variation. Every piece is included in the static H
 Clicking the drawing or activating it with Enter/Space generates a new variation.
 A descriptive button name and a polite live announcement support screen readers.
 
-Only the drawing marks animate, and only in response to deliberate activation.
-Reduced-motion preferences disable this interpolation. Links use simple
-underlines on hover/focus. Nothing animates on arrival or continuously.
+Drawing marks animate only in response to deliberate activation. Post views also
+include a Skiper95-inspired vertical reading ruler in the outer gutter, with a
+clipped fill and a “section title · percentage” label following scroll progress. Before the
+first section, and in posts without headings, the label uses the post title. It measures
+through the end of the prose, excluding comments, and uses a compact vertical
+label on smaller screens. Titles stay within the gutter, truncating when needed
+while the percentage remains visible.
+Reduced-motion preferences disable interpolation.
+Links use simple underlines on hover/focus. Nothing animates on arrival or continuously.
 
 ## Reading and accessibility
 
