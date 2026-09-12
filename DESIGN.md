@@ -70,9 +70,9 @@ Drawing marks animate only in response to deliberate activation. Post views also
 include a Skiper95-inspired vertical reading ruler in the outer gutter, with a
 clipped fill and a “section title · percentage” label following scroll progress. Before the
 first section, and in posts without headings, the label uses the post title. It measures
-through the end of the prose, excluding comments, and uses a compact vertical
-label on smaller screens. Titles stay within the gutter, truncating when needed
-while the percentage remains visible.
+through the end of the prose, excluding comments. Smaller screens show only the
+progress rail so the label does not obscure it. Desktop titles stay within the
+gutter, truncating when needed while the percentage remains visible.
 Reduced-motion preferences disable interpolation.
 Links use simple underlines on hover/focus. Nothing animates on arrival or continuously.
 
