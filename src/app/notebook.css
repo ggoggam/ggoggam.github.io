@@ -269,6 +269,7 @@
 /* Skiper95-inspired reading ruler, kept in the outer gutter above the blur. */
 .reading-progress {
   --reading-progress: 0%;
+  --reading-marker-position: 0%;
   position: fixed;
   z-index: 20;
   top: 50%;
@@ -287,22 +288,38 @@
 .reading-progress-fill {
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(to bottom, var(--rule-strong) 0 1px, transparent 1px 8px);
 }
 .reading-progress-fill {
+  display: none;
   background: repeating-linear-gradient(to bottom, var(--ink) 0 1px, transparent 1px 8px);
   clip-path: inset(0 0 calc(100% - var(--reading-progress)) 0);
   transition: clip-path 120ms ease-out;
 }
+.reading-progress-notch {
+  position: absolute;
+  right: 0;
+  width: 100%;
+  height: 1px;
+  transform: translateY(-50%);
+  background: var(--rule-strong);
+  transition:
+    width 320ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 240ms ease-in-out;
+}
+.reading-progress-notch[data-complete="true"],
+.reading-progress-notch[data-active="true"] {
+  background: var(--ink);
+}
+.reading-progress-notch[data-active="true"] {
+  width: 24px;
+}
 .reading-progress-marker {
   position: absolute;
-  top: var(--reading-progress);
-  right: 0;
+  top: var(--reading-marker-position);
+  right: 34px;
   display: flex;
   align-items: center;
-  gap: 10px;
   transform: translateY(-50%);
-  transition: top 120ms ease-out;
 }
 .reading-progress-label {
   display: flex;
@@ -331,13 +348,6 @@
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
-.reading-progress-line {
-  flex-shrink: 0;
-  width: 20px;
-  height: 1px;
-  background: var(--ink);
-}
-
 /* Keep the whole indicator inside the existing phone/tablet gutter. */
 @media (max-width: 960px) {
   .reading-progress {
@@ -345,13 +355,14 @@
     width: 10px;
     height: min(160px, 30svh);
   }
-  .reading-progress-marker {
-    right: -1px;
+  .reading-progress-track {
+    background: repeating-linear-gradient(to bottom, var(--rule-strong) 0 1px, transparent 1px 8px);
   }
-  .reading-progress-label {
-    display: none;
+  .reading-progress-fill {
+    display: block;
   }
-  .reading-progress-line {
+  .reading-progress-marker,
+  .reading-progress-notch {
     display: none;
   }
 }

@@ -10,6 +10,8 @@ type ReadingHeading = {
   offset: number;
 };
 
+const NOTCH_COUNT = 31;
+
 // Inspired by Skiper UI's Scroll progress 003 (skiper95):
 // https://skiper-ui.com/v1/skiper95. Implemented locally without its Pro source.
 export default function ReadingProgress({ contentRef, title }: ReadingProgressProps) {
@@ -29,6 +31,8 @@ export default function ReadingProgress({ contentRef, title }: ReadingProgressPr
     let frame = 0;
     let lastPercent = -1;
     let lastTitle = "";
+    let lastNotch = -1;
+    const notches = Array.from(meter.querySelectorAll<HTMLElement>(".reading-progress-notch"));
     let needsMeasure = true;
     let end = 0;
     let headings: ReadingHeading[] = [];
@@ -83,6 +87,19 @@ export default function ReadingProgress({ contentRef, title }: ReadingProgressPr
       }
 
       indicator.style.setProperty("--reading-progress", `${progress * 100}%`);
+      const activeNotch = Math.round(progress * (NOTCH_COUNT - 1));
+      if (activeNotch !== lastNotch) {
+        notches.forEach((notch, index) => {
+          notch.dataset.active = String(index === activeNotch);
+          notch.dataset.complete = String(index < activeNotch);
+        });
+        // The label steps between fixed ticks; only the ticks' widths animate.
+        indicator.style.setProperty(
+          "--reading-marker-position",
+          `${(activeNotch / (NOTCH_COUNT - 1)) * 100}%`
+        );
+        lastNotch = activeNotch;
+      }
       indicator.dataset.ready = "true";
       if (percent !== lastPercent) {
         meter.setAttribute("aria-valuenow", String(percent));
@@ -131,6 +148,15 @@ export default function ReadingProgress({ contentRef, title }: ReadingProgressPr
         aria-valuetext={`${title} · 0%`}
       >
         <div className="reading-progress-fill" />
+        {Array.from({ length: NOTCH_COUNT }, (_, index) => (
+          <span
+            key={index}
+            className="reading-progress-notch"
+            style={{ top: `${(index / (NOTCH_COUNT - 1)) * 100}%` }}
+            data-active={index === 0}
+            aria-hidden="true"
+          />
+        ))}
       </div>
       <div className="reading-progress-marker" aria-hidden="true">
         <span className="reading-progress-label">
@@ -142,7 +168,6 @@ export default function ReadingProgress({ contentRef, title }: ReadingProgressPr
             0%
           </span>
         </span>
-        <span className="reading-progress-line" />
       </div>
     </div>
   );
