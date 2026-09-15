@@ -67,8 +67,9 @@ Clicking the drawing or activating it with Enter/Space generates a new variation
 A descriptive button name and a polite live announcement support screen readers.
 
 Drawing marks animate only in response to deliberate activation. Post views also
-include a Skiper95-inspired vertical reading ruler in the outer gutter, with a
-clipped fill and a “section title · percentage” label following scroll progress. Before the
+include a Skiper95-inspired vertical reading ruler in the outer gutter. On desktop,
+the active tick grows in place with a “section title · percentage” label beside it;
+the label steps between ticks as reading progresses. Before the
 first section, and in posts without headings, the label uses the post title. It measures
 through the end of the prose, excluding comments. Smaller screens show only the
 progress rail so the label does not obscure it. Desktop titles stay within the
