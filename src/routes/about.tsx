@@ -44,6 +44,13 @@ const PROJECTS: Project[] = [
     href: "https://github.com/ggoggam/vitre",
   },
   {
+    name: "inklet",
+    description:
+      "Hand-drawn components for Compose Multiplatform: sketchy, boiling UI on Android, iOS, desktop, and web.",
+    where: "ggoggam/inklet",
+    href: "https://github.com/ggoggam/inklet",
+  },
+  {
     name: "openxet",
     description:
       "An open-source Rust server for the Xet protocol: content-addressable storage, frontend included.",
