@@ -46,10 +46,9 @@ surface is read under both daylight and a dark room.
   tags, published).
 - Posts are filterable by tag within `/blog` and `/til` via a `?tag=` search param.
 - A post's page carries a Giscus comment thread.
-- The home page shows the 6 most recent posts across both types and an unframed generative drawing.
-  Previous/next controls browse Schotter and three original studies: Drift, Orbits, and Faults.
-  Clicking or keyboard-activating a drawing regenerates it; browsing preserves its variation.
-  All four SVGs also render in static HTML, with Schotter visible initially.
+- The home page shows the 6 most recent posts across both types and an unframed drawing:
+  책가도, a hairline figure of a bookcase before a folding screen whose compartments are filled
+  at random on each load. It answers the pointer, and needs scripts to draw.
 - One TIL (`gershgorin`) embeds an interactive canvas component and is the only post using KaTeX math.
 - Static hosting only: no server, no database, no image pipeline. Everything ships as prerendered
   HTML plus assets in `public/`.
