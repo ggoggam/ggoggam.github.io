@@ -9,7 +9,7 @@ This direction supersedes the earlier Skiper-inspired notebook treatment.
 An 880px browsing measure, generous outer margins, and a restrained grey surface.
 The homepage contains an unframed drawing followed by six dated post titles.
 The drawing is centred within the content column on both desktop and mobile.
-Small previous/next controls browse four pieces, showing one drawing at a time.
+The drawing is 책가도; its compartments are filled anew on each load.
 
 The header contains only the Korean wordmark and three lowercase section links.
 The footer contains copyright, GitHub, source, and the theme control.
@@ -57,16 +57,17 @@ highlighting continue to follow the selected preference.
 
 ## Drawing and interaction
 
-Schotter is a seeded, prerenderable SVG of 216 squares. Three original studies
-share its progression from order to disorder: Drift (rotating strokes), Orbits
-(displaced concentric circles), and Faults (fractured parallel rows). Their portrait
-proportions and single captions let each sit like a small work on an otherwise empty wall.
-Schotter appears first. Previous/next controls wrap through the collection and
-preserve each piece's current variation. Every piece is included in the static HTML.
-Clicking the drawing or activating it with Enter/Space generates a new variation.
-A descriptive button name and a polite live announcement support screen readers.
+The drawing is a hairline figure, in the style and on the engine of
+@lucasmarkes/hairline: an isometric line drawing of rounded solids in one stroke, in
+four weights taken from paper and ink, that answers the pointer. 책가도 is a Joseon
+scholar's bookcase standing before an 일월오봉도 folding screen; its compartments are
+filled at random on each load from books and scholar's objects. It has no caption, and
+the drawing holds no words.
 
-Drawing marks animate only in response to deliberate activation. Post views also
+The kernel and figure in src/hairline/ stay byte-for-byte what the hairline skill builds
+and checks; vite.config.ts wraps them as modules, loaded on the client after the page.
+
+Drawings move only in answer to the reader, under the pointer. Nothing plays on its own. Post views also
 include a Skiper95-inspired vertical reading ruler in the outer gutter. On desktop,
 the active tick grows in place with a “section title · percentage” label beside it;
 the label steps between ticks as reading progresses. Before the
@@ -91,11 +92,9 @@ footnotes, reference previews, and Giscus comments.
 
 - src/app/notebook.css: the browsing surface, updated theme tokens, responsive layout.
 - src/app/globals.css: shared prose, code, math, and reference styling.
-- src/components/schotter-canvas.tsx: the SVG drawing; existing component name retained.
-- src/components/generative-studies.tsx: three original SVG studies.
-- src/components/art-figure.tsx: shared regeneration, caption, and accessible description.
-- src/components/art-gallery.tsx: one drawing at a time, with previous/next controls.
-- src/lib/generative-art.ts: deterministic randomness shared by the drawings.
+- src/components/hairline-figure.tsx: mounts one hairline figure.
+- src/hairline/: the hairline kernel and the 책가도 figure, unchanged from the skill's output.
+- src/components/art-gallery.tsx: the home page's drawing.
 - src/components/post/post-preview.tsx: dated title rows.
 - src/components/site/: plain navigation, footer, and theme control.
 

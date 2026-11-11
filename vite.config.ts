@@ -43,8 +43,29 @@ function ggoggamImagesPlugin() {
   };
 }
 
+// The hairline kernel and its figures stay byte-for-byte what the hairline skill builds and
+// checks: plain scripts that share a global HL and end by calling hairline({ … }). This wraps
+// them as modules on the way in: the kernel exports HL, and a figure exports a function that
+// takes HL and the hairline() callback (see src/components/hairline-figure.tsx).
+function hairlineModulesPlugin() {
+  return {
+    name: "hairline-modules",
+    enforce: "pre" as const,
+    transform(code: string, id: string) {
+      const file = id.split("?")[0];
+      if (file.endsWith("/src/hairline/kernel.js")) {
+        return { code: `${code}\nexport default HL;\n`, map: null };
+      }
+      if (/\/src\/hairline\/figures\/[^/]+\.js$/.test(file)) {
+        return { code: `export default function (HL, hairline) {\n${code}\n}\n`, map: null };
+      }
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
+    hairlineModulesPlugin(),
     TanStackRouterVite({
       routesDirectory: "./src/routes",
       generatedRouteTree: "./src/routeTree.gen.ts",
